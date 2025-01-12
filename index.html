@@ -4,25 +4,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Name - Web Designer</title>
+    <title>🍒</title>
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/901/901014.png" type="image/x-icon">
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous"
+        referrerpolicy="no-referrer" />
 </head>
 
 <body>
-    <header>
-        <h1>Your Name</h1>
-        <p>Aspiring Web Designer</p>
-    </header>
+    <div class="splash-container">
+        <header class="splash-header">
+            <div class="splash-content">
+                <h1>Tommy Knight</h1>
+                <p>Creative Web Designer</p>
+                <button id="view-portfolio" class="button">Enter</button>
+            </div>
+        </header>
+    </div>
 
-    <main>
-        <section>
-            <p> Welcome to my online portfolio where you will find my skills and experience showcased to a high professional standard</p>
-        </section>
+    <main class="content-container hidden">
+        <nav class="main-nav">
+            <a href="" class="nav-home">t</a>
+            <ul class="nav-list">
+                <li data-target="about" class="nav-item active">About</li>
+                <li data-target="projects" class="nav-item">Projects</li>
+                <li data-target="cv" class="nav-item">CV</li>
+
+                <li data-target="contact" class="nav-item">Contact</li>
+
+            </ul>
+        </nav>
+
+        <div class="content-cards">
+            <div id="about" class="card card--active">
+                <div class="card-content">
+                    <div class="card-title">
+                        <a href="" class="card-nav card-nav--prev">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        <h2>About Me</h2>
+                        <div class="card-line"></div>
+                        <a href="" class="card-nav card-nav--next">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                    <p>
+                        For two decades, I lived in the dynamic worlds of television, film and theatre, collaborating with industry-leading creatives.
+                        This experience gave me a love for creative design.
+                    </p>
+                    <p>
+                        My passion for coding began early, hosting and designing private servers for the browser based Java game, RuneScape, creating
+                        open-source plugins for the online community.
+                    </p>
+                    <p>
+                        In 2021, I undertook intensive training in open-source full-stack web development, focusing on collaborative projects using
+                        technologies such as
+                        React, TypeScript, Node.js, MongoDB, and SQL. I became proficient in version control with Git and gained experience with
+                        responsive design frameworks
+                        like Bootstrap and Tailwind.
+                    </p>
+                </div>
+            </div>
+            <div id="projects" class="card">
+                <div class="card-content">
+                    <div class="card-title">
+                        <a href="" class="card-nav card-nav--prev">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        <h2>Projects</h2>
+                        <div class="card-line"></div>
+                        <a href="" class="card-nav card-nav--next">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                    <p>
+                        These projects showcase my approach to web development: clean, intuitive design with subtle animations that enhance
+                        navigation. While I love using
+                        React for its amendable and readable code, I'm also confident building with vanilla HTML and JavaScript to ensure the right
+                        framework for the job.
+                    </p>
+                    <div class="project-grid">
+                        <a href="https://github.com/Tommy-Knight/PhoTide" class="project-item">
+                            <img src="https://picsum.photos/500/500?random=1" alt="Project 1">
+                            <div class="project-overlay">
+                                <h3 class="project-title">Photide</h3>
+                            </div>
+                        </a>
+                        <a href="https://github.com/Tommy-Knight?tab=repositories" class="project-item">
+                            <img src="https://picsum.photos/500/500?random=2" alt="Project 2">
+                            <div class="project-overlay">
+                                <h3 class="project-title">GitHub</h3>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div id="cv" class="card">
+                <div class="card-content">
+                    <div class="card-title">
+                        <a href="" class="card-nav card-nav--prev">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        <h2>CV</h2>
+                        <div class="card-line"></div>
+                        <a href="" class="card-nav card-nav--next">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                    <p>
+                        If you'd like to view my 2025 CV, please click the image below.
+                    </p>
+                    <div class="cv-container">
+                        <a href="TommyKnight-CV2024.pdf" target="_blank" class="cv-link">
+                            <img src="cv.jpg" alt="Tommy Knight CV" class="cv-image">
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div id="contact" class="card">
+                <div class="card-content">
+                    <div class="card-title">
+                        <a href="" class="card-nav card-nav--prev">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        <h2>Contact</h2>
+                        <div class="card-line"></div>
+                        <a href="" class="card-nav card-nav--next">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                    <p>
+                        Think you can 1v1 me in Mario Kart? Prove it! Feel free to connect through the links below, or send a friendly email. ❤️ </p>
+                    </p>
+                    <div class="contact-links">
+                        <a href="https://www.linkedin.com/in/tommy-knight-785175212/" target="_blank" class="contact-link">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="https://github.com/Tommy-Knight" target="_blank" class="contact-link">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://x.com/_TommyLK" target="_blank" class="contact-link">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="mailto:tknighted@hotmail.com" class="contact-link">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
-
-    <footer>
-        <p>© 2024 Your Name</p>
+    <footer class="main-footer hidden">
+        <p>© 2025 Tommy Knight. Vanilla HTML</p>
+        <button id="dark-mode-toggle" class="dark-mode-toggle">
+            <i class="fas fa-moon"></i>
+        </button>
     </footer>
+    <script src="script.js"></script>
 </body>
 
 </html>
