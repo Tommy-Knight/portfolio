@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		footerElement.classList.remove('hidden');
 		footerElement.classList.add('show');
 		splashContainer.style.opacity = 0;
-
+		console.log('welcome ✌️');
 		setTimeout(() => {
 			bodyElement.style.backgroundColor = '#f0f0f0';
 			splashContainer.style.display = 'none';
@@ -161,19 +161,4 @@ document.addEventListener('DOMContentLoaded', () => {
 	updateDarkModeIcon();
 	// Toggle darkmode on click
 	darkModeToggle.addEventListener('click', darkMode);
-});
-// Event listener to the mousemove event
-document.addEventListener('mousemove', (e) => {
-	const currentX = e.clientX;
-	const currentY = e.clientY;
-	// Calculate the distance from last creation location
-	const distance = Math.sqrt(
-		(currentX - lastMouseX) ** 2 + (currentY - lastMouseY) ** 2
-	);
-
-	if (distance > minDistanceBetweenStars) {
-		createStar(currentX, currentY);
-		lastMouseX = currentX;
-		lastMouseY = currentY;
-	}
 });
