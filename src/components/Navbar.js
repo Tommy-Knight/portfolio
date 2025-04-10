@@ -1,9 +1,8 @@
 import React from 'react';
-// import './Navbar.css'; // Create this CSS file
 
 function Navbar({ activeCard, onNavLinkClick }) {
   const handleHomeClick = () => {
-    window.location.reload(); // Simplest way to mimic logo click
+    window.location.reload(); 
   };
 
   return (

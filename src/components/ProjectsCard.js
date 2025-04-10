@@ -3,12 +3,8 @@ import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
 
-// import './Card.css';
-// import project1 from '../assets/project1.jpg'; // Import your images
-// import project2 from '../assets/project2.jpg';
-
 function ProjectsCard({ isActive, onNavClick }, ref) {
-  return (
+	return (
 		<div
 			id='projects'
 			className={`card ${isActive ? 'card--active' : ''}`}
@@ -29,10 +25,9 @@ function ProjectsCard({ isActive, onNavClick }, ref) {
 					</button>
 				</div>
 				<p>
-					These projects showcase my approach to web development: clean, intuitive
-					design with subtle animations that enhance navigation. While I love using
-					React for its amendable and readable code, I'm also confident building with
-					vanilla HTML and JavaScript to ensure the right framework for the job.
+					My projects are a minimalist mix of function and feel — clean interfaces, subtle
+					animations, and code that’s easy to work with (for both humans and
+					browsers). It’s all about balance.
 				</p>
 				<div className='project-grid'>
 					<a
@@ -45,10 +40,7 @@ function ProjectsCard({ isActive, onNavClick }, ref) {
 							<h3 className='project-title'>GitHub</h3>
 						</div>
 					</a>
-					<a
-						href='/wyr'
-						className='project-item'
-						rel='noopener noreferrer'>
+					<a href='/wyr' className='project-item' rel='noopener noreferrer'>
 						<img src={'https://picsum.photos/500/500?random=1'} alt='Project 2' />
 						<div className='project-overlay'>
 							<h3 className='project-title'>Would You Rather?</h3>
