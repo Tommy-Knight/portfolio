@@ -2,7 +2,7 @@ import './wyr.css'; // Import the CSS
 
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { faGithub } from '@fortawesome/free-brands-svg-icons'; // Import GitHub icon
+// import { faGithub } from '@fortawesome/free-brands-svg-icons'; // Import GitHub icon
 
 const API_URL = process.env.REACT_APP_API_URL || ''; // Get API URL from env
 
@@ -243,7 +243,7 @@ function WouldYouRather() {
 								target='_blank'
 								rel='noopener noreferrer'
 								aria-label='GitHub Repository'>
-								<faGithub />
+								{/* <faGithub /> */}
 							</a>
 						</div>
 						{/* Burger is shown in the other card */}
