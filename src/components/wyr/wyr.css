@@ -1,0 +1,340 @@
+/* src/components/wyr/wyr.css */
+
+/* Basic Reset & Body Styling */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root /* Assuming #root is your main entry point */ {
+  height: 100%;
+  overflow: hidden; /* Prevent scrolling on the body */
+}
+
+/* Main WYR Container */
+.wyr-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #fff; /* Fallback */
+  position: relative; /* For absolute positioning of header/menu */
+}
+
+/* Header */
+.wyr-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  z-index: 10;
+}
+
+.wyr-github-link a {
+  color: inherit; /* Inherit color from parent card */
+  text-decoration: none;
+  display: block; /* Ensure the link takes up the icon space */
+}
+
+.wyr-github-link svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+/* Adjust link color based on background */
+.wyr-option-a .wyr-github-link a { color: #fff; }
+.wyr-option-b .wyr-github-link a { color: #000; }
+
+/* Burger Menu Button */
+.wyr-burger-menu {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px; /* Easier click target */
+  z-index: 105; /* Above overlay content but below close button */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 25px;
+}
+
+.wyr-burger-menu span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: #000; /* Default black */
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+/* Burger color based on background */
+.wyr-option-b .wyr-burger-menu span { background-color: #000; }
+.wyr-option-a .wyr-burger-menu span { background-color: #fff; }
+/* Change burger color when menu is open */
+.wyr-container.menu-open .wyr-burger-menu span {
+  background-color: #fff;
+}
+
+/* Options Container */
+.wyr-options-container {
+  display: flex;
+  flex-grow: 1; /* Takes up remaining space */
+  width: 100%;
+}
+
+/* Individual Option Card */
+.wyr-option {
+  flex: 1; /* Each card takes half the width */
+  display: flex;
+  flex-direction: column; /* Stack header elements and text */
+  justify-content: center; /* Center text vertically */
+  align-items: center; /* Center text horizontally */
+  padding: 5rem 2rem 2rem; /* Add more top padding to clear header */
+  text-align: center;
+  position: relative; /* For absolute header positioning context */
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow: hidden; /* Hide overflowing text during transition */
+}
+
+.wyr-option:not(.voted) {
+  cursor: pointer;
+}
+.wyr-option.voted {
+  cursor: default;
+}
+
+/* Card Specific Colors */
+.wyr-option-a {
+  background-color: #000;
+  color: #fff;
+}
+
+.wyr-option-b {
+  background-color: #fff;
+  color: #000;
+}
+
+/* Header positioning within cards */
+.wyr-option .wyr-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+/* Only show the relevant header items for each side */
+.wyr-option-a .wyr-header .wyr-burger-menu { display: none; }
+.wyr-option-b .wyr-header .wyr-github-link { display: none; }
+
+/* Content inside card (Text or Percentage) */
+.wyr-option-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px; /* Fixed height to prevent layout shifts during transition */
+  width: 100%; /* Ensure it takes full width */
+}
+
+.wyr-option h2,
+.wyr-option .wyr-percentage {
+  font-size: 2rem; /* Adjust as needed */
+  font-weight: bold;
+  transition: transform 0.2s ease-out, opacity 0.3s ease-in-out;
+  max-width: 90%; /* Prevent very long text touching edges */
+}
+
+.wyr-option:not(.voted):hover h2 {
+  transform: translateY(-10px);
+}
+
+/* Percentage styling */
+.wyr-percentage {
+  font-size: 4rem; /* Make percentage prominent */
+  font-weight: bold;
+}
+
+/* Hide/Show Logic */
+.wyr-option-content h2.hidden,
+.wyr-option-content .wyr-percentage.hidden {
+  opacity: 0;
+  pointer-events: none; /* Prevent interaction when hidden */
+  position: absolute; /* Take out of flow when hidden */
+}
+
+/* Loading and Error States */
+.wyr-loading,
+.wyr-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+  font-size: 1.5rem;
+  width: 100%;
+}
+.wyr-error {
+  color: #d9534f; /* Reddish color for errors */
+  background-color: #f2dede;
+  padding: 2rem;
+  text-align: center;
+}
+.wyr-loading {
+  color: #555;
+}
+
+/* Menu Overlay */
+.wyr-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 15, 15, 0.98); /* Dark overlay */
+  color: #fff;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0s linear 0.3s; /* Delay visibility transition */
+}
+
+.wyr-menu-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0s linear 0s;
+}
+
+.wyr-menu-content {
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  text-align: center;
+}
+
+.wyr-menu-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  z-index: 110; /* Above overlay content */
+}
+
+.wyr-menu-content h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+/* Form Styling */
+.wyr-menu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.wyr-menu-form label {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  display: block;
+  text-align: left;
+}
+
+.wyr-menu-form input {
+  padding: 0.8rem 1rem;
+  border: 1px solid #555;
+  background-color: #333;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.wyr-menu-form input:focus {
+  outline: none;
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.wyr-menu-button,
+.wyr-flag-button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.wyr-menu-button {
+  background-color: #fff;
+  color: #000;
+}
+.wyr-menu-button:hover {
+  background-color: #ddd;
+}
+.wyr-menu-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.wyr-flag-button {
+  background-color: #d9534f; /* Red for flag */
+  color: #fff;
+  margin-top: 1rem;
+}
+.wyr-flag-button:hover {
+  background-color: #c9302c;
+}
+.wyr-flag-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.wyr-submit-status {
+  margin-top: 1rem;
+  font-weight: bold;
+  min-height: 1.2em; /* Reserve space */
+}
+.wyr-submit-status.success { color: #5cb85c; }
+.wyr-submit-status.error { color: #d9534f; }
+
+/* Responsive Adjustments (Example) */
+@media (max-width: 768px) {
+  .wyr-options-container {
+    flex-direction: column; /* Stack cards vertically */
+  }
+  .wyr-option {
+    min-height: 50vh; /* Each card takes half the height */
+    flex-basis: auto; /* Override flex: 1 */
+    padding: 3rem 1rem 1rem; /* Adjust padding */
+  }
+  .wyr-option h2 {
+    font-size: 1.5rem;
+  }
+  .wyr-percentage {
+    font-size: 3rem;
+  }
+  /* Ensure header elements are visible on stacked layout */
+  .wyr-option-a .wyr-header .wyr-burger-menu { display: flex; }
+  .wyr-option-b .wyr-header .wyr-github-link { display: block; }
+  /* Decide which side shows which header item or duplicate */
+   .wyr-option-b .wyr-header .wyr-burger-menu { display: none; } /* Hide burger on bottom card */
+}
