@@ -1,4 +1,5 @@
 /* src/components/wyr/wyr.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 
 /* Basic Reset & Body Styling */
 * {
@@ -9,9 +10,9 @@
 
 html,
 body,
-#root /* Assuming #root is your main entry point */ {
+#root {
   height: 100%;
-  overflow: hidden; /* Prevent scrolling on the body */
+  overflow: hidden;
 }
 
 /* Main WYR Container */
@@ -20,175 +21,255 @@ body,
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #fff; /* Fallback */
-  position: relative; /* For absolute positioning of header/menu */
+  background-color: #222222f1;
+  color: #eee;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Header */
+/* Loading Bar */
+.wyr-loading-bar-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background-color: #444;
+    z-index: 20;
+    opacity: 0;
+    visibility: hidden;
+}
+.wyr-loading-bar-container.visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.1s ease, visibility 0s linear;
+}
+
+.wyr-loading-bar {
+    width: 0;
+    height: 100%;
+    background-color: #00bcd4;
+    transition: width 2.5s linear;
+}
+.wyr-loading-bar-container.visible .wyr-loading-bar {
+    width: 100%;
+}
+
+/* Header Container */
 .wyr-header {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+  top: 0; left: 0; width: 100%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  z-index: 10;
+  z-index: 30;
+  pointer-events: none;
+}
+.wyr-header > * {
+  pointer-events: auto;
 }
 
+
+/* GitHub Link - Positioned Left */
+.wyr-github-link {
+  position: absolute;
+  top: 1.5rem;
+  left: 2rem;
+  z-index: 31;
+}
 .wyr-github-link a {
-  color: inherit; /* Inherit color from parent card */
+  color: #eee;
   text-decoration: none;
-  display: block; /* Ensure the link takes up the icon space */
-}
-
-.wyr-github-link svg {
-  width: 32px;
-  height: 32px;
   display: block;
 }
+.wyr-github-link svg {
+  width: 28px !important;
+  height: 28px !important;
+  display: block;
+  fill: currentColor;
+}
+.wyr-option-b .wyr-github-link a {
+    display: none;
+}
 
-/* Adjust link color based on background */
-.wyr-option-a .wyr-github-link a { color: #fff; }
-.wyr-option-b .wyr-github-link a { color: #000; }
 
-/* Burger Menu Button */
+/* Burger Menu Button - Positioned Right */
 .wyr-burger-menu {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px; /* Easier click target */
-  z-index: 105; /* Above overlay content but below close button */
+  background: none; border: none; cursor: pointer;
+  padding: 8px;
+  z-index: 105;
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
-  width: 30px;
-  height: 25px;
+  justify-content: space-between;
+  width: 30px; height: 25px;
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+}
+.wyr-burger-menu span {
+  display: block; width: 100%; height: 3px;
+  background-color: #333;
+  border-radius: 3px;
+  transition: all 0.3s ease-in-out;
+  transform-origin: center;
+}
+.wyr-option-a .wyr-burger-menu span {
+    background-color: #eee;
+}
+.wyr-option-a .wyr-burger-menu {
+    display: none;
+}
+.wyr-option-b .wyr-burger-menu {
+     display: flex;
 }
 
-.wyr-burger-menu span {
-  display: block;
-  width: 100%;
-  height: 3px;
-  background-color: #000; /* Default black */
-  border-radius: 3px;
-  transition: background-color 0.3s ease;
-}
-/* Burger color based on background */
-.wyr-option-b .wyr-burger-menu span { background-color: #000; }
-.wyr-option-a .wyr-burger-menu span { background-color: #fff; }
-/* Change burger color when menu is open */
+/* Burger animation to X */
 .wyr-container.menu-open .wyr-burger-menu span {
-  background-color: #fff;
+   background-color: #eee;
 }
+.wyr-container.menu-open .wyr-burger-menu span:nth-child(1) {
+  transform: translateY(5.5px) rotate(45deg);
+}
+.wyr-container.menu-open .wyr-burger-menu span:nth-child(2) {
+  transform: translateY(-5.5px) rotate(-45deg);
+}
+
 
 /* Options Container */
 .wyr-options-container {
   display: flex;
-  flex-grow: 1; /* Takes up remaining space */
+  flex-grow: 1;
   width: 100%;
 }
 
 /* Individual Option Card */
 .wyr-option {
-  flex: 1; /* Each card takes half the width */
+  flex: 1;
   display: flex;
-  flex-direction: column; /* Stack header elements and text */
-  justify-content: center; /* Center text vertically */
-  align-items: center; /* Center text horizontally */
-  padding: 5rem 2rem 2rem; /* Add more top padding to clear header */
-  text-align: center;
-  position: relative; /* For absolute header positioning context */
-  transition: background-color 0.3s ease, color 0.3s ease;
-  overflow: hidden; /* Hide overflowing text during transition */
-}
-
-.wyr-option:not(.voted) {
-  cursor: pointer;
-}
-.wyr-option.voted {
-  cursor: default;
-}
-
-/* Card Specific Colors */
-.wyr-option-a {
-  background-color: #000;
-  color: #fff;
-}
-
-.wyr-option-b {
-  background-color: #fff;
-  color: #000;
-}
-
-/* Header positioning within cards */
-.wyr-option .wyr-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-}
-/* Only show the relevant header items for each side */
-.wyr-option-a .wyr-header .wyr-burger-menu { display: none; }
-.wyr-option-b .wyr-header .wyr-github-link { display: none; }
-
-/* Content inside card (Text or Percentage) */
-.wyr-option-content {
-  display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100px; /* Fixed height to prevent layout shifts during transition */
-  width: 100%; /* Ensure it takes full width */
+  padding: 5rem 2rem 2rem;
+  text-align: center;
+  position: relative;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow: hidden;
 }
+.wyr-option.loading-next {
+    /* Optional visual cue */
+}
+
+.wyr-option:not(.voted) { cursor: pointer; }
+.wyr-option.voted { cursor: default; }
+
+/* Card Specific Colors (Updated Theme) */
+.wyr-option-a {
+  background-color: #222222f1;
+  color: #eee;
+}
+.wyr-option-b {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+/* Content inside card (Text or Percentage/Sentence) */
+.wyr-option-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+  width: 100%;
+  position: relative;
+}
+
 
 .wyr-option h2,
-.wyr-option .wyr-percentage {
-  font-size: 2rem; /* Adjust as needed */
+.wyr-result-sentence {
+  font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: bold;
-  transition: transform 0.2s ease-out, opacity 0.3s ease-in-out;
-  max-width: 90%; /* Prevent very long text touching edges */
-}
-
-.wyr-option:not(.voted):hover h2 {
-  transform: translateY(-10px);
-}
-
-/* Percentage styling */
-.wyr-percentage {
-  font-size: 4rem; /* Make percentage prominent */
-  font-weight: bold;
-}
-
-/* Hide/Show Logic */
-.wyr-option-content h2.hidden,
-.wyr-option-content .wyr-percentage.hidden {
+  transition: transform 0.3s ease-out;
+  max-width: 90%;
+  width: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   opacity: 0;
-  pointer-events: none; /* Prevent interaction when hidden */
-  position: absolute; /* Take out of flow when hidden */
+  pointer-events: none;
+}
+
+/* Show/Hide logic */
+.wyr-option-content h2.visible,
+.wyr-option-content .wyr-result-sentence.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.4s ease-in-out, transform 0.3s ease-out;
+}
+
+/* Hover effect only when not voted and not loading next */
+.wyr-option:not(.voted):not(.loading-next):hover h2.visible {
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* Result Sentence specifics */
+.wyr-result-sentence {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  line-height: 1.4;
+}
+
+.wyr-result-percentage {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.5rem;
 }
 
 /* Loading and Error States */
 .wyr-loading,
 .wyr-error {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   flex-grow: 1;
   font-size: 1.5rem;
   width: 100%;
-}
-.wyr-error {
-  color: #d9534f; /* Reddish color for errors */
-  background-color: #f2dede;
+  height: 100vh;
+  color: #eee;
   padding: 2rem;
   text-align: center;
 }
-.wyr-loading {
-  color: #555;
+.wyr-error {
+  color: #d9534f;
+  background-color: rgba(242, 222, 222, 0.1);
 }
+.wyr-error button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #eee;
+    color: #333;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+.wyr-loading {
+  color: #ccc;
+}
+.wyr-loading button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #eee;
+    color: #333;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
 
 /* Menu Overlay */
 .wyr-menu-overlay {
@@ -197,8 +278,8 @@ body,
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(15, 15, 15, 0.98); /* Dark overlay */
-  color: #fff;
+  background-color: rgba(15, 15, 15, 0.98);
+  color: #eee;
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -206,7 +287,7 @@ body,
   align-items: center;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0s linear 0.3s; /* Delay visibility transition */
+  transition: opacity 0.3s ease, visibility 0s linear 0.3s;
 }
 
 .wyr-menu-overlay.open {
@@ -220,6 +301,8 @@ body,
   max-width: 600px;
   width: 90%;
   text-align: center;
+  overflow-y: auto;
+  max-height: 90vh;
 }
 
 .wyr-menu-close {
@@ -228,12 +311,12 @@ body,
   right: 2rem;
   background: none;
   border: none;
-  color: #fff;
+  color: #eee;
   font-size: 2.5rem;
   line-height: 1;
   cursor: pointer;
   padding: 0;
-  z-index: 110; /* Above overlay content */
+  z-index: 110;
 }
 
 .wyr-menu-content h3 {
@@ -246,7 +329,7 @@ body,
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .wyr-menu-form label {
@@ -260,7 +343,7 @@ body,
   padding: 0.8rem 1rem;
   border: 1px solid #555;
   background-color: #333;
-  color: #fff;
+  color: #eee;
   border-radius: 4px;
   font-size: 1rem;
   width: 100%;
@@ -268,12 +351,14 @@ body,
 
 .wyr-menu-form input:focus {
   outline: none;
-  border-color: #fff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+  border-color: #eee;
+  box-shadow: 0 0 0 2px rgba(238, 238, 238, 0.5);
 }
 
+/* Buttons & Links in Menu */
 .wyr-menu-button,
-.wyr-flag-button {
+.wyr-flag-button,
+.wyr-exit-link {
   padding: 0.8rem 1.5rem;
   border: none;
   border-radius: 4px;
@@ -281,14 +366,19 @@ body,
   font-size: 1rem;
   font-weight: bold;
   transition: background-color 0.2s ease, opacity 0.2s ease;
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 1rem;
+  text-decoration: none;
 }
 
 .wyr-menu-button {
-  background-color: #fff;
-  color: #000;
+  background-color: #eee;
+  color: #333;
 }
-.wyr-menu-button:hover {
-  background-color: #ddd;
+.wyr-menu-button:hover:not(:disabled) {
+  background-color: #ccc;
 }
 .wyr-menu-button:disabled {
     opacity: 0.6;
@@ -296,11 +386,10 @@ body,
 }
 
 .wyr-flag-button {
-  background-color: #d9534f; /* Red for flag */
+  background-color: #d9534f;
   color: #fff;
-  margin-top: 1rem;
 }
-.wyr-flag-button:hover {
+.wyr-flag-button:hover:not(:disabled) {
   background-color: #c9302c;
 }
 .wyr-flag-button:disabled {
@@ -308,33 +397,82 @@ body,
     cursor: not-allowed;
 }
 
+/* Exit Link Specifics */
+.wyr-exit-link {
+  background-color: #555;
+  color: #eee;
+  margin-top: 1rem;
+}
+.wyr-exit-link:hover {
+  background-color: #777;
+}
+
 .wyr-submit-status {
   margin-top: 1rem;
   font-weight: bold;
-  min-height: 1.2em; /* Reserve space */
+  min-height: 1.2em;
 }
 .wyr-submit-status.success { color: #5cb85c; }
 .wyr-submit-status.error { color: #d9534f; }
 
-/* Responsive Adjustments (Example) */
+
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .wyr-options-container {
-    flex-direction: column; /* Stack cards vertically */
+    flex-direction: column;
   }
   .wyr-option {
-    min-height: 50vh; /* Each card takes half the height */
-    flex-basis: auto; /* Override flex: 1 */
-    padding: 3rem 1rem 1rem; /* Adjust padding */
+    min-height: 50vh;
+    flex-basis: auto;
+    padding: 4rem 1rem 1rem;
   }
   .wyr-option h2 {
-    font-size: 1.5rem;
+     font-size: 1.3rem;
   }
-  .wyr-percentage {
-    font-size: 3rem;
+   .wyr-result-sentence {
+     font-size: 1.1rem;
   }
-  /* Ensure header elements are visible on stacked layout */
-  .wyr-option-a .wyr-header .wyr-burger-menu { display: flex; }
-  .wyr-option-b .wyr-header .wyr-github-link { display: block; }
-  /* Decide which side shows which header item or duplicate */
-   .wyr-option-b .wyr-header .wyr-burger-menu { display: none; } /* Hide burger on bottom card */
+   .wyr-result-percentage {
+    font-size: 2.5rem;
+  }
+
+  /* Header Icons on Mobile */
+  .wyr-header {
+    padding: 1rem 1rem;
+  }
+  .wyr-github-link {
+    display: block !important;
+    left: 1rem; top: 1rem;
+  }
+  .wyr-burger-menu {
+    display: flex !important;
+    right: 1rem; top: 1rem;
+  }
+
+  /* Adjust icon colors for mobile based on the background it's over */
+  .wyr-option-a .wyr-github-link a { color: #eee; }
+  .wyr-option-a .wyr-burger-menu span { background-color: #eee; }
+  .wyr-option-b .wyr-github-link a { color: #333; }
+  .wyr-option-b .wyr-burger-menu span { background-color: #333; }
+
+  /* Keep burger white ('X') when menu is open */
+   .wyr-container.menu-open .wyr-burger-menu span {
+      background-color: #eee;
+   }
+
+   /* Menu content adjustments on mobile */
+   .wyr-menu-content {
+       padding: 1.5rem;
+       max-height: 85vh;
+   }
+    .wyr-menu-close {
+        top: 1rem; right: 1rem;
+    }
+    .wyr-menu-content h3 {
+        font-size: 1.5rem;
+    }
+    .wyr-menu-button, .wyr-flag-button, .wyr-exit-link {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.9rem;
+    }
 }
