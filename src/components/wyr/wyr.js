@@ -27,6 +27,7 @@ function WouldYouRather() {
 
 	const API_URL = process.env.REACT_APP_API_URL || '';
 	const NEXT_QUESTION_DELAY = 2500;
+	const FLAG_SUCCESS_DELAY = 2500;
 	const PERCENTAGE_ANIMATION_DURATION = 1000;
 
 	const lowerCaseFirst = (str) =>
@@ -197,6 +198,7 @@ function WouldYouRather() {
 			const response = await fetch(`${API_URL}/api/wyr/flag/${question.id}`, {
 				method: 'POST',
 			});
+
 			if (!response.ok) {
 				let errorMsg = `Flag Error: ${response.status}`;
 				try {
@@ -206,15 +208,23 @@ function WouldYouRather() {
 				throw new Error(errorMsg);
 			}
 			setSubmitStatus({
-				message: 'Question Flagged! Loading next...',
+				message: 'Question Flagged!',
 				type: 'success',
 			});
-			closeMenu();
-			fetchQuestion();
+
+			setTimeout(() => {
+				setSubmitStatus({ message: '', type: '' });
+				setIsFlagging(false);
+				fetchQuestion();
+				closeMenu();
+			}, FLAG_SUCCESS_DELAY);
 		} catch (err) {
 			console.error('Flag submission error:', err);
-			setSubmitStatus({ message: err.message || 'Flagging failed.', type: 'error' });
-		} finally {
+			setSubmitStatus({
+				message: err.message || 'Flagging failed.',
+				type: 'error',
+			});
+			
 			setTimeout(() => {
 				setIsFlagging(false);
 			}, 1500);
