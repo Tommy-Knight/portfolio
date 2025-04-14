@@ -43,55 +43,66 @@ function WouldYouRather() {
 		str ? str.charAt(0).toLowerCase() + str.slice(1) : '';
 
 	// --- API: Fetch Question ---
-	const fetchQuestion = useCallback(
-		async (isInitialLoad = false) => {
-			if (isInitialLoad || error) {
-				setIsLoading(true);
-			}
-			setError(null);
+const fetchQuestion = useCallback(
+	async (isInitialLoad = false) => {
+		console.log('fetchQuestion called', { isInitialLoad });
+		if (isInitialLoad || error) {
+			setIsLoading(true);
+		}
+		setError(null);
+		setIsLoadingNext(false);
+		setShowResults(false);
+		setVoted(false);
+		setDisplayPercentA(0);
+		setDisplayPercentB(0);
 
-			setIsLoadingNext(false);
-			setShowResults(false);
-			setVoted(false);
-			setDisplayPercentA(0);
-			setDisplayPercentB(0);
-			if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-			if (nextQuestionTimerRef.current) clearTimeout(nextQuestionTimerRef.current);
+		if (animationFrameRef.current) {
+			cancelAnimationFrame(animationFrameRef.current);
+		}
+		if (nextQuestionTimerRef.current) {
+			clearTimeout(nextQuestionTimerRef.current);
+		}
 
-			if (!API_URL) {
-				setError('API URL is not configured.');
-				setIsLoading(false);
-				setQuestion(null);
-				return;
-			}
+		if (!API_URL) {
+			console.error('API URL not configured');
+			setError('API URL is not configured.');
+			setIsLoading(false);
+			setQuestion(null);
+			return;
+		}
 
-			try {
-				const response = await fetch(`${API_URL}/api/wyr/question`);
-				if (!response.ok) {
-					let errorMsg = `Error: ${response.status}`;
-					try {
-						const errData = await response.json();
-						errorMsg = errData.error || errorMsg;
-					} catch (e) {
-					}
-					throw new Error(errorMsg);
+		try {
+			console.log('Fetching question from API');
+			const response = await fetch(`${API_URL}/api/wyr/question`);
+			if (!response.ok) {
+				let errorMsg = `Error: ${response.status}`;
+				try {
+					const errData = await response.json();
+					errorMsg = errData.error || errorMsg;
+					console.log('Received error message from API:', errorMsg);
+				} catch (e) {
+					console.error('Error parsing error response:', e);
 				}
-				const data = await response.json();
-				if (data && data.id) {
-					setQuestion(data);
-				} else {
-					throw new Error('Received invalid question data from API.');
-				}
-			} catch (err) {
-				console.error('Fetch question error:', err);
-				setError(err.message || 'Failed to fetch question.');
-				setQuestion(null);
-			} finally {
-				setIsLoading(false);
+				throw new Error(errorMsg);
 			}
-		},
-		[error]
-	);
+			const data = await response.json();
+			console.log('Question data received:', data);
+			if (data && data.id) {
+				setQuestion(data);
+			} else {
+				throw new Error('Received invalid question data from API.');
+			}
+		} catch (err) {
+			console.error('Fetch question error:', err);
+			setError(err.message || 'Failed to fetch question.');
+			setQuestion(null);
+		} finally {
+			console.log('Setting isLoading to false');
+			setIsLoading(false);
+		}
+	},
+	[error]
+);
 
 	// --- Effect: Initial Fetch ---
 	useEffect(() => {
