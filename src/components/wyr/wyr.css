@@ -40,11 +40,12 @@ body,
     z-index: 20;
     opacity: 0;
     visibility: hidden;
+    
 }
 .wyr-loading-bar-container.visible {
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.1s ease, visibility 0s linear;
+    transition: opacity 0.3s ease, visibility 0s linear;
 }
 
 .wyr-loading-bar {
