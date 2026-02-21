@@ -31,7 +31,6 @@ body {
   font-family: var(--font-mono);
   background: var(--void);
   color: var(--text);
-  cursor: none;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -83,6 +82,11 @@ body {
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.1em;
+}
+
+/* Hide native cursor only on devices with a mouse/trackpad */
+@media (pointer: fine) {
+  body, .marquee-tape, .work-item, .footer-deploy-btn { cursor: none; }
 }
 
 /* ── Loader ─────────────────────────────────────────────────── */
@@ -413,7 +417,6 @@ body {
   background: var(--void);
   width: 100%;
   touch-action: pan-y;
-  cursor: none;
   user-select: none;
 }
 
@@ -483,7 +486,6 @@ body {
 .work-item {
   border-bottom: 1px solid var(--border);
   overflow: hidden;
-  cursor: none;
 }
 
 .work-item-header {
@@ -599,7 +601,6 @@ body {
   background: none;
   border: none;
   color: var(--text);
-  cursor: none;
   padding: 0;
   letter-spacing: -0.03em;
   transition: color 0.25s;

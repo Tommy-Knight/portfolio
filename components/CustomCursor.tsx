@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 export default function CustomCursor() {
+  const [hasPointer, setHasPointer] = useState(false);
   const rawX = useMotionValue(-200);
   const rawY = useMotionValue(-200);
   const [isPush, setIsPush] = useState(false);
@@ -11,7 +12,18 @@ export default function CustomCursor() {
   const x = useSpring(rawX, { stiffness: 700, damping: 38, mass: 0.4 });
   const y = useSpring(rawY, { stiffness: 700, damping: 38, mass: 0.4 });
 
+  // Only enable on devices with a fine pointer (mouse/trackpad)
   useEffect(() => {
+    const mql = window.matchMedia('(pointer: fine)');
+    setHasPointer(mql.matches);
+    const onChange = (e: MediaQueryListEvent) => setHasPointer(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!hasPointer) return;
+
     const onMove = (e: MouseEvent) => {
       rawX.set(e.clientX);
       rawY.set(e.clientY);
@@ -49,7 +61,9 @@ export default function CustomCursor() {
         el.removeEventListener('mouseleave', onLeavePush);
       });
     };
-  }, [rawX, rawY]);
+  }, [hasPointer, rawX, rawY]);
+
+  if (!hasPointer) return null;
 
   return (
     <motion.div
