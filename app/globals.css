@@ -1,0 +1,687 @@
+@import 'tailwindcss';
+
+/* ============================================================
+   TOMMY KNIGHT — SYSTEMS_FROM_CHAOS
+   Aesthetic: Brutalist / Terminal / Void Black
+   ============================================================ */
+
+:root {
+  --void:      #050505;
+  --green:     #00FF41;
+  --grey:      #888;
+  --grey-mid:  #aaa;
+  --text:      #e8e8e8;
+  --border:    #1a1a1a;
+  --font-mono: var(--font-ibm-mono, 'IBM Plex Mono', monospace);
+
+  /* Hero title letter-spacing — adjust to fit square layout */
+  --hero-arch-ls:    -0.02em;
+  --hero-systems-ls: -0.05em;
+  --hero-chaos-spread: 0.2em; 
+
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  position: relative;
+  font-family: var(--font-mono);
+  background: var(--void);
+  color: var(--text);
+  cursor: none;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection { background: var(--green); color: var(--void); }
+
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--grey); }
+
+/* ── Shared ─────────────────────────────────────────────────── */
+.section-label {
+  font-size: 0.76rem;
+  letter-spacing: 0.35em;
+  color: var(--green);
+  text-transform: uppercase;
+  margin-bottom: 3rem;
+}
+
+/* ── Custom Cursor ──────────────────────────────────────────── */
+.custom-cursor {
+  position: fixed;
+  top: -10px;
+  left: -10px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--green);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  color: var(--green);
+  transition: border-radius 0.2s, width 0.2s, height 0.2s, top 0.2s, left 0.2s, background 0.2s;
+}
+
+.custom-cursor.is-push {
+  width: 64px;
+  height: 64px;
+  top: -32px;
+  left: -32px;
+  border-radius: 0;
+  background: var(--green);
+  color: var(--void);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+/* ── Loader ─────────────────────────────────────────────────── */
+.loader-terminal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  min-width: 340px;
+}
+
+.loader-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  font-size: 0.76rem;
+  color: var(--grey-mid);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.loader-status--fail    { color: #ff4444; font-size: 0.76rem; }
+.loader-status--success { color: var(--green); font-size: 0.76rem; }
+
+.loader-cursor {
+  color: var(--green);
+  animation: blink 0.8s step-end infinite;
+}
+
+/* ── Hero ───────────────────────────────────────────────────── */
+.hero-section {
+  height: 300vh;
+  position: relative;
+  will-change: transform;
+}
+
+.hero-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Scattered CHAOS letters — same size as the final word.
+   No scale ever changes. Only position + rotation animate.
+   Spacing is controlled by --hero-chaos-spread CSS variable in positioning. */
+.hero-chaos-letter {
+  position: absolute;
+  font-family: 'TikTok Sans', sans-serif;
+  font-optical-sizing: auto;
+  font-size: clamp(2.5rem, 16vw, 15rem);
+  font-weight: 700;
+  font-variation-settings: 'slnt' 0, 'wdth' 100;
+  color: var(--text);
+  user-select: none;
+  will-change: transform, filter;
+  line-height: 1;
+}
+
+/* Headline container */
+.hero-systems {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-align: center;
+  line-height: 0.72;
+  color: var(--text);
+  pointer-events: none;
+}
+
+/* "ARCHITECTING" and "SYSTEMS FROM" — TikTok Sans with adjustable letter-spacing.
+   Fine-tune --hero-arch-ls and --hero-systems-ls to create the square layout. */
+.hero-systems-upper {
+  font-family: 'TikTok Sans', sans-serif;
+  font-size: clamp(2.2rem, 7vw, 10rem);
+  display: block;
+}
+
+.hero-arch {
+  letter-spacing: var(--hero-arch-ls, -0.02em);
+  white-space: nowrap;
+}
+
+.hero-systems-upper.hero-systems {
+  letter-spacing: var(--hero-systems-ls, -0.02em);
+  white-space: nowrap;
+}
+
+/* Invisible spacer — maintains 3-line vertical geometry only.
+   Horizontal width is irrelevant (opacity: 0); matches 0.8 line-height of CHAOS word. */
+.hero-systems-spacer {
+  font-size: clamp(2.5rem, 11vw, 15rem);
+  display: block;
+  opacity: 0;
+  user-select: none;
+  pointer-events: none;
+  line-height: 0.8;
+}
+
+.hero-subtext {
+  position: absolute;
+  bottom: 8vh;
+  font-size: 0.76rem;
+  letter-spacing: 0.25em;
+  color: var(--grey-mid);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.hero-cursor-blink {
+  color: var(--green);
+  animation: blink 1s step-end infinite;
+}
+
+/* Idea 4 — Anchor line */
+.hero-anchor {
+  position: absolute;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.76rem;
+  letter-spacing: 0.28em;
+  color: var(--grey-mid);
+  white-space: nowrap;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+/* Transformation cycling line — anchored from the bottom,
+   sitting just above the subtext so it never conflicts with the CHAOS word. */
+.hero-transform {
+  position: absolute;
+  bottom: calc(8vh + 3.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.76rem;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Terminal loading bar with label and percentage */
+.hero-loading-bar {
+  position: absolute;
+  right: 4rem;
+  bottom: 8vh;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.hero-loading-label {
+  font-size: 0.76rem;
+  letter-spacing: 0.15em;
+  color: var(--green);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hero-loading-arrow {
+  color: var(--green);
+  margin-right: 0.3rem;
+  text-shadow: 0 0 4px var(--green);
+}
+
+.hero-loading-bar-container {
+  width: 180px;
+  height: 4px;
+  background: rgba(0, 255, 65, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.hero-loading-bar-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--green);
+}
+
+.hero-loading-percent {
+  font-size: 0.76rem;
+  letter-spacing: 0.1em;
+  color: var(--green);
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 0 6px var(--green);
+}
+
+/* ── About ──────────────────────────────────────────────────── */
+.about-section {
+  padding: 8rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.about-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.about-act-label {
+  font-size: 0.76rem;
+  letter-spacing: 0.4em;
+  color: var(--green);
+  margin-bottom: 1rem;
+}
+
+.about-act-title {
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+/* Serif font variants */
+.about-act-title.serif.pt-serif { font-family: var(--font-pt-serif); font-weight: 400; }
+.about-act-title.serif.noto-serif { font-family: var(--font-noto-serif); font-weight: 400; }
+.about-act-title.serif.young-serif { font-family: var(--font-young-serif); font-weight: 400; }
+.about-act-title.serif.source-serif { font-family: var(--font-source-serif); font-weight: 400; }
+.about-act-title.serif.ibm-serif { font-family: var(--font-ibm-serif); font-weight: 400; }
+.about-act-title.serif.roboto-serif { font-family: var(--font-roboto-serif); font-weight: 400; }
+
+/* Mono font variants */
+.about-act-title.mono.ibm { font-family: var(--font-ibm-mono); }
+.about-act-title.mono.roboto-mono { font-family: var(--font-roboto-mono); }
+.about-act-title.mono.space-mono { font-family: var(--font-space-mono); }
+.about-act-title.mono.jetbrains { font-family: var(--font-jetbrains-mono); }
+.about-act-title.mono.dm-mono { font-family: var(--font-dm-mono); }
+.about-act-title.mono.noto-sans-mono { font-family: var(--font-noto-sans-mono); }
+
+.about-act-body {
+  font-size: 0.95rem;
+  line-height: 1.85;
+  color: var(--grey-mid);
+  margin-bottom: 1rem;
+}
+
+/* Serif font variants */
+.about-act-body.serif.pt-serif { font-family: var(--font-pt-serif); }
+.about-act-body.serif.noto-serif { font-family: var(--font-noto-serif); }
+.about-act-body.serif.young-serif { font-family: var(--font-young-serif); }
+.about-act-body.serif.source-serif { font-family: var(--font-source-serif); }
+.about-act-body.serif.ibm-serif { font-family: var(--font-ibm-serif); }
+.about-act-body.serif.roboto-serif { font-family: var(--font-roboto-serif); }
+
+/* Mono font variants */
+.about-act-body.mono.ibm { font-family: var(--font-ibm-mono); }
+.about-act-body.mono.roboto-mono { font-family: var(--font-roboto-mono); }
+.about-act-body.mono.space-mono { font-family: var(--font-space-mono); }
+.about-act-body.mono.jetbrains { font-family: var(--font-jetbrains-mono); }
+.about-act-body.mono.dm-mono { font-family: var(--font-dm-mono); }
+.about-act-body.mono.noto-sans-mono { font-family: var(--font-noto-sans-mono); }
+
+.about-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 4.5rem;
+  align-self: stretch;
+}
+
+.about-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+  overflow: visible;
+}
+
+.about-font-credits {
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  gap: 3rem;
+  padding: 2rem 0 0;
+  margin-top: 0;
+}
+
+.about-font-credit {
+  font-size: 0.76rem;
+  letter-spacing: 0.2em;
+  color: var(--grey);
+  text-align: right;
+  text-transform: uppercase;
+  height: 1.2rem;
+}
+
+.about-font-credit-spacer {
+  /* Matches the divider column */
+}
+
+.about-font-credit-inline {
+  display: none;
+  font-size: 0.76rem;
+  letter-spacing: 0.2em;
+  color: var(--grey);
+  text-transform: uppercase;
+  margin-top: 1rem;
+  height: 1.2rem;
+}
+
+
+/* ── Marquee ────────────────────────────────────────────────── */
+.marquee-section {
+  overflow: hidden;
+  padding: 1.8rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--void);
+  width: 100%;
+  touch-action: pan-y;
+  cursor: none;
+  user-select: none;
+}
+
+.marquee-wrapper {
+  overflow: hidden;
+  padding: 1.2rem 0;
+}
+
+.marquee-track {
+  display: flex;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0 1.5rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--grey-mid);
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+.marquee-wrapper.hovered .marquee-item { color: #fff; }
+
+.marquee-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: var(--green);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Work ───────────────────────────────────────────────────── */
+.work-section {
+  padding: 8rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.work-list {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;          /* Firefox */
+}
+.work-list::-webkit-scrollbar { display: none; }
+
+.work-header {
+  display: grid;
+  grid-template-columns: 3rem 1fr 4rem;
+  gap: 2rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.35em;
+  color: var(--grey);
+  text-transform: uppercase;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.work-item {
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  cursor: none;
+}
+
+.work-item-header {
+  display: grid;
+  grid-template-columns: 3rem 1fr 4rem;
+  gap: 2rem;
+  padding: 1.5rem 0;
+  align-items: center;
+  transition: color 0.25s;
+}
+.work-item.active .work-item-header { color: var(--green); }
+
+.work-number {
+  font-size: 0.76rem;
+  color: var(--grey);
+}
+
+.work-name {
+  font-size: clamp(0.9rem, 2.2vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+}
+
+.work-name-inner {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.work-name-overflow {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+}
+
+.work-year {
+  font-size: 0.76rem;
+  text-align: right;
+  color: var(--grey);
+}
+
+.work-diagnostics { overflow: hidden; border-top: 1px solid var(--border); }
+
+.work-diagnostics-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: 1.5rem 0;
+  padding-left: calc(3rem + 2rem);
+}
+
+.work-diag-label {
+  font-size: 0.76rem;
+  letter-spacing: 0.35em;
+  color: var(--green);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.work-diag-value {
+  font-size: 0.8rem;
+  color: var(--grey-mid);
+  line-height: 1.6;
+}
+
+.work-status-row {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.75rem 0 1.5rem;
+  padding-left: calc(3rem + 2rem);
+}
+
+.work-status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.work-status-item.success { color: var(--green); }
+.work-status-item.error   { color: #ff4444; animation: status-dying 3s ease-in-out infinite; }
+
+@keyframes status-dying {
+  0%, 100% { opacity: 1; }
+  40%      { opacity: 0.3; }
+  55%      { opacity: 0.8; }
+  70%      { opacity: 0.15; }
+  85%      { opacity: 0.6; }
+}
+.work-status-item.warning { color: #ff8c00; }
+
+.status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.footer-section {
+  padding: 8rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer-deploy-btn {
+  font-family: 'TikTok Sans', sans-serif;
+  font-size: clamp(3.5rem, 9vw, 9rem);
+  font-weight: 700;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: none;
+  padding: 0;
+  letter-spacing: -0.03em;
+  transition: color 0.25s;
+  display: block;
+  margin: 2rem 0 4rem;
+  line-height: 1;
+}
+.footer-deploy-btn:hover { color: var(--green); }
+
+.footer-meta {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.3em;
+  color: var(--grey);
+  text-transform: uppercase;
+  flex-wrap: wrap;
+}
+
+.matrix-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Hero additions */
+  .hero-loading-bar { display: none; }
+  .hero-anchor  {
+    font-size: 0.76rem;
+    letter-spacing: 0.18em;
+    white-space: normal;
+    text-align: left;
+    left: 0;
+    transform: none;
+    padding: 0 1.5rem;
+  }
+  .hero-anchor-seg { display: block; }
+
+  .hero-subtext  {
+    white-space: normal;
+    text-align: left;
+    padding: 0 1.5rem;
+  }
+  .hero-subtext-seg { display: block; }
+  .hero-transform { font-size: 0.76rem; letter-spacing: 0.12em; bottom: calc(8vh + 6rem); }
+
+  .about-section,
+  .work-section,
+  .footer-section { padding: 5rem 1.5rem; }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .about-divider { flex-direction: row; padding-top: 0; }
+
+  .about-font-credits { display: none; }
+
+  .about-font-credit-inline { display: block; }
+
+  .work-header,
+  .work-item-header {
+    grid-template-columns: 2rem 1fr 3.5rem;
+    gap: 0.75rem;
+  }
+
+  .work-diagnostics-inner { grid-template-columns: 1fr; }
+  .work-diagnostics-inner,
+  .work-status-row { padding-left: calc(2rem + 1rem); }
+
+  .footer-deploy-btn { font-size: clamp(2.5rem, 12vw, 5rem); }
+}

@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
+
+[dev]
+  command = "npm run dev"
+  port = 3000
+
+[context.production]
+  environment = { NODE_ENV = "production", NODE_VERSION = "18.18.0" }
+
+[context.deploy-preview]
+  environment = { NODE_ENV = "production", NODE_VERSION = "18.18.0" }
