@@ -9,7 +9,7 @@ const NODE_RADIUS = 1.2;
 const BASE_SPEED = 0.15;
 const NODE_COLOR = 'rgba(0, 255, 65, 0.22)';     // --green at 22 %
 const LINE_COLOR_BASE = [0, 255, 65];              // rgb for --green
-const LINE_ALPHA_MAX = 0.12;                       // subtle but visible
+const LINE_ALPHA_MAX = 0.12;                       // visibility
 const PARALLAX_FACTOR = 0.35;                      // how much scroll offsets the canvas
 
 interface Node {

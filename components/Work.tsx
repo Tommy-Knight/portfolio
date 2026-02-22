@@ -30,7 +30,7 @@ const PROJECTS: Project[] = [
     name: 'A_COSY_TRACKER',
     year: '2026',
     stack: 'React Native / REST API / OAuth / Cloudflare / Supabase ',
-    impact: 'Full-stack, mobile-first, book tracking app with user libraries, reviews and trending data. Implemented responsive design and real-time user interactions.',
+    impact: 'Full-stack, mobile-first, book tracking app with user libraries, reviews and trending data. Implemented custom ui design and real-time user interactions.',
     status: [
       { label: 'Duo Project',    type: 'success' },
       { label: 'Adding Features',    type: 'warning' },
@@ -41,7 +41,7 @@ const PROJECTS: Project[] = [
     name: 'THE_CORPORATE_MIGRATION',
     year: '2025',
     stack: 'Legacy Code / Next.js / Typescript / Bootstrap / Wordpress / Azure ',
-    impact: 'Solo Migration / 0 Downtime / AAA Compliance. Modernised corporate web presence while removing legacy code and improving accessibility. Cookie Compliant.',
+    impact: 'Solo Migration. Modernised corporate web presence while removing legacy html and improving accessibility. WCAG AA and cookie compliant, new content handled through a WordPress CMS.',
     status: [
       { label: 'Modern Best Practice',  type: 'success' },
       { label: 'Legacy Architecture',   type: 'error'   },
@@ -51,7 +51,7 @@ const PROJECTS: Project[] = [
     number: '04',
     name: 'AUTOMATION_TOOLS_&_DATA_DASHBOARDS',
     year: '2024–',
-    stack: 'React / SQL Server / Tableau API / PowerShell / Python',
+    stack: 'SQL Server / Tableau API / PowerShell / Python / AI',
     impact: 'Side Projects. Monitoring dashboards, automation workflows. Enabling real-time reporting and reducing manual tasks.',
     status: [
       { label: 'Active',       type: 'success' },
@@ -74,7 +74,7 @@ const PROJECTS: Project[] = [
     name: 'OSRS_PRIVATE_SERVERS_&_COMMUNITY_PLUGINS',
     year: '2006–',
     stack: 'Java / Python / Lua / Custom Game Engines',
-    impact: 'Game server hosting, modding, community tools. Developed deep understanding of backend logic, networking, and plugin architecture through experimentation and user-driven development.',
+    impact: 'Private game server hosting, modding, community tools. Learned to read other peoples code, then refactor and improve.',
     status: [
       { label: 'Legacy',       type: 'success' },
       { label: 'Foundational', type: 'success' },
@@ -217,8 +217,6 @@ export default function Work() {
       measured.current = true;
       const baseHeight = sectionRef.current.scrollHeight;
       const maxPanel = Math.max(...panelHeights.current.values());
-      // Bottom padding (8rem ≈ 128px) already provides some room —
-      // only add the panel height minus that existing cushion
       const bottomPadding = parseFloat(getComputedStyle(sectionRef.current).paddingBottom);
       const extra = Math.max(0, maxPanel - bottomPadding);
       setFixedHeight(baseHeight + extra);

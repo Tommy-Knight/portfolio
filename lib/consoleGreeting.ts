@@ -44,7 +44,6 @@ export function printConsoleGreeting(): void {
     { TECH: 'Framer Motion 11', ROLE: 'Animation' },
     { TECH: 'Lenis',            ROLE: 'Scroll' },
     { TECH: 'Express 5',        ROLE: 'Backend' },
-    { TECH: 'MSSQL / Azure',    ROLE: 'Database' },
     { TECH: 'Netlify',          ROLE: 'Hosting' },
   ]);
 

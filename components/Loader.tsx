@@ -33,17 +33,12 @@ const STEPS: Step[] = [
   { type: 'line', text: ' ✓ Starting...',                                          pause: 60,  className: 'loader-ok' },
   { type: 'line', text: ' ✓ Ready in 1.1s',                                        pause: 280, className: 'loader-ok' },
   { type: 'line', text: ' ○ Compiling / ...',                                      pause: 200 },
-  { type: 'line', text: ' ✓ Compiled / in 6.9s (1337 modules)',                    pause: 840, className: 'loader-ok' },
+  { type: 'line', text: ' ✓ Compiled / in 2.2s (1338 modules)',                    pause: 840, className: 'loader-ok' },
 ];
 
-/* ── Fizzle fade ──────────────────────────────────────────────
-   Doom-style dissolve: divide the screen into an NxM grid of
-   tiles, then clear them in pseudo-random order using a
-   shuffled index array. ~800ms total dissolve.
-   ──────────────────────────────────────────────────────────── */
 
 const TILE_SIZE = 8; // px — chunky retro blocks
-const FIZZLE_DURATION = 700; // ms for full dissolve (eased)
+const FIZZLE_DURATION = 444; // ms for full dissolve (eased)
 
 function shuffleArray(arr: number[]) {
   for (let i = arr.length - 1; i > 0; i--) {

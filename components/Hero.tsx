@@ -36,10 +36,12 @@ const EASE = cubicBezier(0.25, 0.46, 0.45, 0.94);
 
 // ─── Supporting data ─────────────────────────────────────────────────────────
 const TRANSFORMS = [
-  ['MONOLITH.EXE', 'MICROSERVICES'],
-  ['LEGACY_DB',    'CLEAN_SCHEMA'],
-  ['TECH_DEBT',    'OPTIMISED_API'],
-  ['OLD_PATTERNS', 'MODERN_STACK'],
+	['CHAOTIC_DB', 'RESILIENT_SCHEMA'],
+	['LEGACY_PATTERNS', 'MODERN_STACK'],
+  ['HARDCODED_LIMITS', 'SCALABLE_SYSTEMS'],
+	['STATIC_REPORTS', 'REAL_TIME_DASHBOARD'],
+	['MANUAL_PROCESSES', 'AUTOMATED_PIPELINE'],
+  ['ON_PREM_SERVERS', 'CLOUD_ARCHITECTURE'],
 ];
 
 
@@ -119,8 +121,6 @@ export default function Hero() {
   const [transformIdx, setTransformIdx]   = useState(0);
   const [transformFade, setTransformFade] = useState(true);
   const [loadingPercentDisplay, setLoadingPercentDisplay] = useState(0);
-  // Exact final X positions (px relative to viewport centre) for each CHAOS letter,
-  // derived from Range API per-character measurements — works for any proportional font.
   const [finalXArr, setFinalXArr] = useState<number[]>([-2, -1, 0, 1, 2].map(i => i * 77));
 
   useLayoutEffect(() => {
@@ -129,16 +129,9 @@ export default function Hero() {
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
-
-  // ── Font size mirrors (JS mirrors CSS clamp() exactly) ──────────────────
-  // .hero-chaos-letter:  clamp(2.5rem, 11vw, 15rem)  →  40–240px  (TikTok Sans)
-  // .hero-systems-upper: clamp(2.2rem, 8.5vw, 10rem) →  35.2–160px (Bebas Neue)
-  // No scale ever changes — letters are ALWAYS at chaosFS throughout the animation.
   const chaosFS = dims.w > 0 ? Math.min(Math.max(dims.w * 0.11,  40),  240) : 128;
   const line1FS = dims.w > 0 ? Math.min(Math.max(dims.w * 0.085, 35.2), 160) : 64;
 
-  // Measure CHAOS character widths and position its letters.
-  // Letter-spacing for each line is now controlled via CSS variables.
   useEffect(() => {
     const measure = () => {
       if (!chaosNaturalRef.current) return;
@@ -147,7 +140,6 @@ export default function Hero() {
       const textNode = span.firstChild;
       if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
 
-      // Per-character bounding rects — gives exact glyph advance for TikTok Sans
       const charRects: DOMRect[] = [];
       for (let i = 0; i < 5; i++) {
         const range = document.createRange();
@@ -158,7 +150,6 @@ export default function Hero() {
 
       const naturalWidth = charRects[4].right - charRects[0].left;
 
-      // Get the spread value from CSS variable (in em units) and convert to pixels
       const computedStyle = getComputedStyle(span);
       const spreadStr = computedStyle.getPropertyValue('--hero-chaos-spread').trim();
       const spreadEm = parseFloat(spreadStr) || 0;
@@ -198,9 +189,6 @@ export default function Hero() {
     offset: ['start start', 'end start'],
   });
 
-
-  // finalY: CHAOS is the 3rd line of a 3-line block with line-height 0.8.
-  // Moved down to prevent overlap with larger font-size
   const finalY = line1FS * 1;
 
   // ── Scroll-driven reveals ────────────────────────────────────────────────
