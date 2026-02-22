@@ -64,13 +64,13 @@ const robotoSerif = Roboto_Serif({
 
 /* ── Monospace Fonts (Act II - The Engineer) ─────────── */
 const ibmPlexMono = IBM_Plex_Mono({
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-ibm-mono',
 });
 
 const robotoMono = Roboto_Mono({
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-roboto-mono',
   preload: false,
@@ -84,27 +84,28 @@ const spaceMono = Space_Mono({
 });
 
 const jetBrainsMono = JetBrains_Mono({
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-jetbrains-mono',
   preload: false,
 });
 
 const dmMono = DM_Mono({
-  weight: ['400', '500'],
+  weight: '400',
   subsets: ['latin'],
   variable: '--font-dm-mono',
   preload: false,
 });
 
 const notoSansMono = Noto_Sans_Mono({
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-noto-sans-mono',
   preload: false,
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.tommyk.uk'),
   title: '🍒',
   description: '</description>',
   icons: { icon: '/icon.ico' },
@@ -115,7 +116,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${ptSerif.variable} ${notoSerif.variable} ${youngSerif.variable} ${sourceSerif.variable} ${ibmPlexSerif.variable} ${robotoSerif.variable} ${ibmPlexMono.variable} ${robotoMono.variable} ${spaceMono.variable} ${jetBrainsMono.variable} ${dmMono.variable} ${notoSansMono.variable}`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Async Google Fonts — non-render-blocking */}
         <link
           rel="preload"

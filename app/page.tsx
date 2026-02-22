@@ -38,7 +38,7 @@ export default function Home() {
     <>
       {!ready && <Loader onComplete={() => setReady(true)} />}
       {ready && <ParticleNetwork />}
-      <main style={{ opacity: ready ? 1 : 0, position: 'relative', zIndex: 1 }}>
+      <main style={{ position: 'relative', zIndex: 1 }}>
         <Hero />
         <About />
         <MarqueeTape />

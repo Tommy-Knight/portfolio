@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent, cubicBezier, type MotionValue } from 'framer-motion';
 
 // ─── Scatter positions ───────────────────────────────────────────────────────
 // xFactors arranged L→R as C-H-A-O-S so the scattered state never reads
 // as another word. yFactors alternate high/low for maximum visual chaos.
 const CHAOS_DATA = [
-  { char: 'C', xFactor: -0.42, yFactor: -0.22, rotate: -18 },
+  { char: 'C', xFactor: -0.36, yFactor: -0.22, rotate: -18 },
   { char: 'H', xFactor: -0.15, yFactor:  0.28, rotate:  10 },
   { char: 'A', xFactor:  0.06, yFactor: -0.30, rotate:  -7 },
   { char: 'O', xFactor:  0.33, yFactor:  0.22, rotate:  14 },
-  { char: 'S', xFactor:  0.46, yFactor: -0.12, rotate: -22 },
+  { char: 'S', xFactor:  0.38, yFactor: -0.12, rotate: -22 },
 ];
 
 // ─── Scroll windows ──────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ export default function Hero() {
   // derived from Range API per-character measurements — works for any proportional font.
   const [finalXArr, setFinalXArr] = useState<number[]>([-2, -1, 0, 1, 2].map(i => i * 77));
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const update = () => setDims({ w: window.innerWidth, h: window.innerHeight });
     update();
     window.addEventListener('resize', update);
@@ -178,9 +178,9 @@ export default function Hero() {
     };
     document.fonts.ready.then(() => {
       if ('requestIdleCallback' in window) {
-        requestIdleCallback(measure);
+        requestIdleCallback(measure, { timeout: 200 });
       } else {
-        setTimeout(measure, 0);
+        setTimeout(measure, 50);
       }
     });
   }, [chaosFS]); // re-runs on resize since chaosFS depends on dims.w
@@ -226,7 +226,7 @@ export default function Hero() {
         {/* ── Anchor line: gives context before scroll begins ── */}
         <div className="hero-anchor">
           <span className="hero-anchor-seg">TOMMY_KNIGHT</span>
-          <span className="hero-anchor-seg"><span style={{ color: 'var(--green)' }}>//&nbsp;</span>LEGACY_MODERNISATION_SPECIALIST</span>
+          <span className="hero-anchor-seg"><span style={{ color: 'var(--green)' }}>//&nbsp;</span>A_MODERN_BEST_PRACTICE_PORTFOLIO</span>
         </div>
 
         {/* ── CHAOS letters ──
@@ -294,7 +294,7 @@ export default function Hero() {
 
         {/* ── Subtext ── */}
         <motion.div className="hero-subtext" style={{ opacity: subtextOpacity }}>
-          <span className="hero-subtext-seg">TOMMY KNIGHT</span>
+          <span className="hero-subtext-seg">TOMMY_KNIGHT</span>
           <span className="hero-subtext-seg"><span style={{ color: 'var(--green)' }}>//</span> v2.2</span>
           <span className="hero-subtext-seg"><span style={{ color: 'var(--green)' }}>//</span> FULL_STACK_ENGINEER<span className="hero-cursor-blink"> _</span></span>
         </motion.div>
@@ -303,7 +303,7 @@ export default function Hero() {
         <motion.div className="hero-loading-bar" style={{ opacity: loadingOpacity }}>
           <div className="hero-loading-label">
             <span className="hero-loading-arrow">&gt;</span>
-            LOADING
+            SCROLLING
           </div>
           <div className="hero-loading-bar-container">
             <motion.div

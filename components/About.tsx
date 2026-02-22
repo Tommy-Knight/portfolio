@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
 import { useHoverOnScroll } from '@/hooks/useHoverOnScroll';
 
 const ALL_SERIF_FONTS = [
@@ -238,14 +239,12 @@ export default function About() {
 					<h2 className={serifTitleClass}>The Drama Script</h2>
 					<div className='about-text-wrapper'>
 						<p className={serifBodyClass}>
-							Twenty years working across 60+ stage and screen productions, including
-							work on BAFTA-nominated and RTA-winning projects. I learned from the
-							best; rehearsal builds discipline. Press night demands execution. When
-							something breaks, you don’t pause, you adapt.
+							Twenty years contributing to 60+ stage and screen productions, including
+							work on BAFTA-nominated and RTA-winning projects. I spent my early
+							career studying people and reading scripts, surrounded by some of the most accomplished talents in the creative arts.
 						</p>
 						<p className={serifBodyClass}>
-							Theatre taught me the audience doesn&apos;t care about your process -
-							only the result. Clean, precise, on cue.
+							Film taught me the real power of collaboration. Theatre taught me that an audience doesn&apos;t care about process - only the result.
 						</p>
 					</div>
 					<div className='about-font-credit-inline'>{currentSerifLabel}</div>
@@ -275,16 +274,13 @@ export default function About() {
 					<h2 className={monoTitleClass}>The Javascript</h2>
 					<div className='about-text-wrapper'>
 						<p className={monoBodyClass}>
-							Now the scripts I write bring ideas to life. I build the tools I need
-							to solve the problems I face. Countless console logs, endless rebuilds.
-							I refine and rethink until there’s nothing left to take away.
-							Perfection.
+							CUT TO: My VSCode terminal. It's 1 AM and I'm reinstalling node_modules
+							for the fifth time tonight. It might be a different type of script, but it's
+							still drama.
 						</p>
 						<p className={monoBodyClass}>
-							Hosting OSRS private servers since 2006, hacking games and creating
-							community plugins. Trained as a professional full-stack web dev
-							in 2021, I’ve been dismantling and modernising legacy systems ever
-							since.
+							I've been hacking games and writing plugins since 2006, then trained as a
+							full-stack web dev in 2021. I traded in my Serif fonts for Mono and I'm loving every minute.
 						</p>
 					</div>
 					<div className='about-font-credit-inline'>{currentMonoLabel}</div>

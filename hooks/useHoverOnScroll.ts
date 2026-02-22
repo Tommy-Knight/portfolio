@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 
-// Global mouse position tracker
-let globalMouseX = 0;
-let globalMouseY = 0;
+// Global mouse position tracker — null until the mouse has actually moved.
+// On touch/mobile devices mousemove never fires, so this stays null and the
+// scroll-hover logic is skipped entirely, preventing phantom hover triggers.
+let globalMouseX: number | null = null;
+let globalMouseY: number | null = null;
 
 if (typeof window !== 'undefined') {
   document.addEventListener('mousemove', (e) => {
@@ -27,6 +29,7 @@ export function useHoverOnScroll(
     if (!element) return;
 
     const handleScroll = () => {
+      if (globalMouseX === null || globalMouseY === null) return;
       const rect = element.getBoundingClientRect();
       const isUnderMouse =
         globalMouseX >= rect.left &&

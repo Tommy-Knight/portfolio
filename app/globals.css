@@ -24,7 +24,7 @@
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+/* scroll-behavior handled by Lenis — native smooth-scroll disabled to avoid conflicts */
 
 body {
   position: relative;
@@ -96,33 +96,34 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 10000;
-  min-width: 340px;
+  min-width: 420px;
+  max-width: 90vw;
 }
 
 .loader-line {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 2rem;
   font-size: 0.76rem;
   color: var(--grey-mid);
-  margin-bottom: 0.5rem;
-  letter-spacing: 0.05em;
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+  min-height: 1.2em;
 }
 
-.loader-status--fail    { color: #ff4444; font-size: 0.76rem; }
-.loader-status--success { color: var(--green); font-size: 0.76rem; }
+.loader-prompt { color: var(--text); }
+.loader-ok     { color: var(--green); }
+.loader-warn   { color: #ff8c00; }
 
 .loader-cursor {
   color: var(--green);
-  animation: blink 0.8s step-end infinite;
+  font-weight: 700;
+  margin-left: 1px;
 }
 
 /* ── Hero ───────────────────────────────────────────────────── */
 .hero-section {
   height: 300vh;
   position: relative;
-  will-change: transform;
 }
 
 .hero-sticky {
@@ -292,6 +293,8 @@ body {
   padding: 8rem 4rem;
   max-width: 1200px;
   margin: 0 auto;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
 }
 
 .about-grid {
@@ -418,6 +421,8 @@ body {
   width: 100%;
   touch-action: pan-y;
   user-select: none;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100px;
 }
 
 .marquee-wrapper {
@@ -429,6 +434,11 @@ body {
   display: flex;
   white-space: nowrap;
   will-change: transform;
+}
+
+.marquee-set {
+  display: flex;
+  flex-shrink: 0;
 }
 
 .marquee-item {
@@ -462,6 +472,8 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100vh;
 }
 
 .work-list {
@@ -592,6 +604,8 @@ body {
   margin: 0 auto;
   position: relative;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
 }
 
 .footer-deploy-btn {

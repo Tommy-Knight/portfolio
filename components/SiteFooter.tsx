@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 function MatrixCanvas({ onDone }: { onDone: () => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -11,14 +12,14 @@ function MatrixCanvas({ onDone }: { onDone: () => void }) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
 
     const SIZE = 14;
-    const cols = Math.floor(canvas.width / SIZE);
-    const rows = Math.floor(canvas.height / SIZE);
-
-    // Seed drops at random positions so the entire screen fills immediately
+    const cols = Math.floor(w / SIZE);
+    const rows = Math.floor(h / SIZE);
     const drops = Array.from({ length: cols }, () =>
       Math.floor(Math.random() * rows)
     );
@@ -28,64 +29,49 @@ function MatrixCanvas({ onDone }: { onDone: () => void }) {
     let lastScrollY = window.scrollY;
 
     const onScroll = () => {
-      const currentY = window.scrollY;
-      // Scrolling up triggers fade-out
-      if (currentY < lastScrollY && !fading) {
-        fading = true;
-      }
-      lastScrollY = currentY;
+      if (window.scrollY < lastScrollY && !fading) fading = true;
+      lastScrollY = window.scrollY;
     };
-
     window.addEventListener('scroll', onScroll, { passive: true });
 
     const draw = () => {
       if (fading) {
         fadeOpacity *= 0.88;
-        // Fade the entire canvas element so page content bleeds through
         canvas.style.opacity = String(fadeOpacity);
-
-        ctx.fillStyle = `rgba(5, 5, 5, ${0.3 + (1 - fadeOpacity) * 0.5})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        if (fadeOpacity < 0.05) {
-          onDone();
-          return;
-        }
+        ctx.fillStyle = `rgba(5,5,5,${0.3 + (1 - fadeOpacity) * 0.5})`;
+        ctx.fillRect(0, 0, w, h);
+        if (fadeOpacity < 0.05) { onDone(); return; }
       } else {
-        ctx.fillStyle = 'rgba(0, 5, 0, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0,5,0,0.05)';
+        ctx.fillRect(0, 0, w, h);
       }
 
       ctx.font = `${SIZE}px "IBM Plex Mono", monospace`;
-
       drops.forEach((y, i) => {
         const char = String.fromCharCode(0x30A0 + Math.random() * 96);
-
         if (fading) {
-          // During fade: some columns stop, others trickle down with dimming green
           if (Math.random() > 0.3) {
-            ctx.fillStyle = `rgba(0, 255, 65, ${fadeOpacity * (0.3 + Math.random() * 0.7)})`;
+            ctx.fillStyle = `rgba(0,255,65,${fadeOpacity * (0.3 + Math.random() * 0.7)})`;
             ctx.fillText(char, i * SIZE, y * SIZE);
-            drops[i] += Math.random() > 0.5 ? 1 : 0; // Slow trickle
+            drops[i] += Math.random() > 0.5 ? 1 : 0;
           }
         } else {
           ctx.fillStyle = '#00FF41';
           ctx.fillText(char, i * SIZE, y * SIZE);
-          if (y * SIZE > canvas.height && Math.random() > 0.975) drops[i] = 0;
+          if (y * SIZE > h && Math.random() > 0.975) drops[i] = 0;
           drops[i]++;
         }
       });
     };
 
     const interval = setInterval(draw, 33);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('scroll', onScroll);
-    };
+    return () => { clearInterval(interval); window.removeEventListener('scroll', onScroll); };
   }, [onDone]);
 
-  return <canvas ref={ref} className="matrix-canvas" />;
+  return createPortal(
+    <canvas ref={ref} className="matrix-canvas" />,
+    document.body
+  );
 }
 
 export default function SiteFooter() {
@@ -119,7 +105,7 @@ export default function SiteFooter() {
       </button>
 
       <div className="footer-meta">
-        <span>TOMMY KNIGHT <span style={{ color: 'var(--green)' }}>//</span> v2.2</span>
+        <span>TOMMY_KNIGHT <span style={{ color: 'var(--green)' }}>//</span> v2.2</span>
       </div>
       <div className="footer-meta">
         <span><span style={{ color: 'var(--green)' }}>©</span> {dateStr}</span>

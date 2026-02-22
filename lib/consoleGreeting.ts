@@ -29,7 +29,7 @@ export function printConsoleGreeting(): void {
 
   // ─── CTA dropdown ─────────────────────────────────────────────────────────
   console.groupCollapsed(
-    `%c▶ %c? %c// %cClick here to see what powers this site.`,
+    `%c▶ %c? %c// %cClick Me.`,
     `color:#00FF41;font-size:14px;text-shadow:2px 2px 0 #000;`,
     `color:#e8e8e8;font-family:${mono};font-size:13px;text-shadow:1px 1px 2px rgba(0,0,0,0.5);`,
     `color:#00FF41;font-family:${mono};font-size:13px;font-weight:700;text-shadow:2px 2px 0 #000;`,
