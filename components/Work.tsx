@@ -137,7 +137,7 @@ function ScrollingName({ name, active }: { name: string; active: boolean }) {
   );
 }
 
-function WorkItem({ project, open, onOpen, onClose }: { project: Project; open: boolean; onOpen: () => void; onClose: () => void }) {
+function WorkItem({ project, open, onOpen, onClose, onPanelMeasure }: { project: Project; open: boolean; onOpen: () => void; onClose: () => void; onPanelMeasure: (id: string, h: number) => void }) {
   const itemRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(0);
@@ -147,11 +147,13 @@ function WorkItem({ project, open, onOpen, onClose }: { project: Project; open: 
   useEffect(() => {
     if (!contentRef.current) return;
     const ro = new ResizeObserver(([entry]) => {
-      setContentHeight(entry.contentRect.height);
+      const h = entry.contentRect.height;
+      setContentHeight(h);
+      onPanelMeasure(project.number, h);
     });
     ro.observe(contentRef.current);
     return () => ro.disconnect();
-  }, []);
+  }, [onPanelMeasure, project.number]);
 
   return (
     <div
@@ -203,9 +205,32 @@ function WorkItem({ project, open, onOpen, onClose }: { project: Project; open: 
 
 export default function Work() {
   const [activeIdx, setActiveIdx] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [fixedHeight, setFixedHeight] = useState<number | null>(null);
+  const panelHeights = useRef<Map<string, number>>(new Map());
+  const measured = useRef(false);
+
+  const onPanelMeasure = useCallback((id: string, h: number) => {
+    panelHeights.current.set(id, h);
+
+    if (!measured.current && panelHeights.current.size === PROJECTS.length && sectionRef.current) {
+      measured.current = true;
+      const baseHeight = sectionRef.current.scrollHeight;
+      const maxPanel = Math.max(...panelHeights.current.values());
+      // Bottom padding (8rem ≈ 128px) already provides some room —
+      // only add the panel height minus that existing cushion
+      const bottomPadding = parseFloat(getComputedStyle(sectionRef.current).paddingBottom);
+      const extra = Math.max(0, maxPanel - bottomPadding);
+      setFixedHeight(baseHeight + extra);
+    }
+  }, []);
 
   return (
-    <section className="work-section">
+    <section
+      ref={sectionRef}
+      className="work-section"
+      style={fixedHeight ? { height: fixedHeight } : undefined}
+    >
       <div className="section-label">
         SELECTED_WORK // {String(PROJECTS.length).padStart(2, '0')} PROJECTS
       </div>
@@ -224,6 +249,7 @@ export default function Work() {
             open={activeIdx === p.number}
             onOpen={() => setActiveIdx(p.number)}
             onClose={() => setActiveIdx(prev => prev === p.number ? null : prev)}
+            onPanelMeasure={onPanelMeasure}
           />
         ))}
       </div>

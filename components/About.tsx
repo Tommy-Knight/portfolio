@@ -57,8 +57,6 @@ const selectRandomFonts = (
 	};
 };
 
-const CYCLE_INTERVAL = 300; // ms per font when hovering
-
 export default function About() {
 	const [serifFonts, setSerifFonts] = useState<string[]>([]);
 	const [serifLabels, setSerifLabels] = useState<string[]>([]);
@@ -70,22 +68,6 @@ export default function About() {
 
 	const serifColRef = useRef<HTMLDivElement>(null);
 	const monoColRef = useRef<HTMLDivElement>(null);
-	const dividerRef = useRef<HTMLDivElement>(null);
-
-	const serifCycleRef = useRef<NodeJS.Timeout | null>(null);
-	const monoCycleRef = useRef<NodeJS.Timeout | null>(null);
-	const serifIdleRef = useRef<NodeJS.Timeout | null>(null);
-	const monoIdleRef = useRef<NodeJS.Timeout | null>(null);
-	const serifStepRef = useRef(0);
-	const monoStepRef = useRef(0);
-
-	// Rate limiting: 5 changes then 10s cooldown
-	const serifChanges = useRef(0);
-	const monoChanges = useRef(0);
-	const serifCooldown = useRef(false);
-	const monoCooldown = useRef(false);
-	const serifCooldownTimer = useRef<NodeJS.Timeout | null>(null);
-	const monoCooldownTimer = useRef<NodeJS.Timeout | null>(null);
 
 	// Initialize random fonts (5 of each)
 	useEffect(() => {
@@ -98,164 +80,24 @@ export default function About() {
 		setMonoLabels(monoSelection.labels);
 	}, []);
 
-	// Handle serif font cycling on mousemove
-	const handleSerifMouseMove = () => {
-		if (serifFonts.length === 0 || serifCooldown.current) return;
-
-		// Clear idle timeout if it exists
-		if (serifIdleRef.current) {
-			clearTimeout(serifIdleRef.current);
-		}
-
-		// If not cycling, start from next font
-		if (!serifCycleRef.current) {
-			serifStepRef.current = (serifIndex + 1) % serifFonts.length;
-			const cycleFonts = () => {
-				serifChanges.current++;
-				if (serifChanges.current >= 5) {
-					serifCooldown.current = true;
-					if (serifCycleRef.current) {
-						clearTimeout(serifCycleRef.current);
-						serifCycleRef.current = null;
-					}
-					serifCooldownTimer.current = setTimeout(() => {
-						serifCooldown.current = false;
-						serifChanges.current = 0;
-					}, 10000);
-					return;
-				}
-				setSerifIndex(serifStepRef.current);
-				serifStepRef.current = (serifStepRef.current + 1) % serifFonts.length;
-				serifCycleRef.current = setTimeout(cycleFonts, CYCLE_INTERVAL);
-			};
-
-			cycleFonts();
-		}
-
-		// Set timeout to stop cycling when mouse stops moving (50ms debounce)
-		serifIdleRef.current = setTimeout(() => {
-			if (serifCycleRef.current) {
-				clearTimeout(serifCycleRef.current);
-				serifCycleRef.current = null;
-			}
-			if (serifIdleRef.current) {
-				clearTimeout(serifIdleRef.current);
-				serifIdleRef.current = null;
-			}
-		}, 50);
+	// Advance to next font — one change per trigger
+	const nextSerif = () => {
+		if (serifFonts.length === 0) return;
+		setSerifIndex((i) => (i + 1) % serifFonts.length);
 	};
 
-	const handleSerifMouseLeave = () => {
-		if (serifCycleRef.current) {
-			clearTimeout(serifCycleRef.current);
-			serifCycleRef.current = null;
-		}
-		if (serifIdleRef.current) {
-			clearTimeout(serifIdleRef.current);
-			serifIdleRef.current = null;
-		}
-	};
-
-	const startSerifCycle = () => {
-		if (serifFonts.length === 0 || serifCooldown.current) return;
-		if (!serifCycleRef.current) {
-			serifStepRef.current = (serifIndex + 1) % serifFonts.length;
-			const cycleFonts = () => {
-				serifChanges.current++;
-				if (serifChanges.current >= 5) {
-					serifCooldown.current = true;
-					if (serifCycleRef.current) {
-						clearTimeout(serifCycleRef.current);
-						serifCycleRef.current = null;
-					}
-					serifCooldownTimer.current = setTimeout(() => {
-						serifCooldown.current = false;
-						serifChanges.current = 0;
-					}, 10000);
-					return;
-				}
-				setSerifIndex(serifStepRef.current);
-				serifStepRef.current = (serifStepRef.current + 1) % serifFonts.length;
-				serifCycleRef.current = setTimeout(cycleFonts, CYCLE_INTERVAL);
-			};
-			cycleFonts();
-		}
-	};
-
-	// Handle mono font cycling on mousemove
-	const handleMonoMouseMove = () => {
+	const nextMono = () => {
 		if (monoFonts.length === 0) return;
-
-		// Clear idle timeout if it exists
-		if (monoIdleRef.current) {
-			clearTimeout(monoIdleRef.current);
-		}
-
-		// If not cycling, start from next font
-		if (!monoCycleRef.current) {
-			monoStepRef.current = (monoIndex + 1) % monoFonts.length;
-			const cycleFonts = () => {
-				setMonoIndex(monoStepRef.current);
-				monoStepRef.current = (monoStepRef.current + 1) % monoFonts.length;
-				monoCycleRef.current = setTimeout(cycleFonts, CYCLE_INTERVAL);
-			};
-
-			cycleFonts();
-		}
-
-		// Set timeout to stop cycling when mouse stops moving (50ms debounce)
-		monoIdleRef.current = setTimeout(() => {
-			if (monoCycleRef.current) {
-				clearTimeout(monoCycleRef.current);
-				monoCycleRef.current = null;
-			}
-			if (monoIdleRef.current) {
-				clearTimeout(monoIdleRef.current);
-				monoIdleRef.current = null;
-			}
-		}, 50);
+		setMonoIndex((i) => (i + 1) % monoFonts.length);
 	};
 
-	const handleMonoMouseLeave = () => {
-		if (monoCycleRef.current) {
-			clearTimeout(monoCycleRef.current);
-			monoCycleRef.current = null;
-		}
-		if (monoIdleRef.current) {
-			clearTimeout(monoIdleRef.current);
-			monoIdleRef.current = null;
-		}
-	};
+	// Scroll-hover: advance once on enter, no-op on leave
+	useHoverOnScroll(serifColRef, nextSerif, () => {});
+	useHoverOnScroll(monoColRef, nextMono, () => {});
 
-	const startMonoCycle = () => {
-		if (monoFonts.length === 0) return;
-		if (!monoCycleRef.current) {
-			monoStepRef.current = (monoIndex + 1) % monoFonts.length;
-			const cycleFonts = () => {
-				setMonoIndex(monoStepRef.current);
-				monoStepRef.current = (monoStepRef.current + 1) % monoFonts.length;
-				monoCycleRef.current = setTimeout(cycleFonts, CYCLE_INTERVAL);
-			};
-			cycleFonts();
-		}
-	};
-
-	useHoverOnScroll(serifColRef, startSerifCycle, handleSerifMouseLeave);
-	useHoverOnScroll(monoColRef, startMonoCycle, handleMonoMouseLeave);
-	useHoverOnScroll(
-		dividerRef,
-		() => {
-			startSerifCycle();
-			startMonoCycle();
-		},
-		() => {
-			handleSerifMouseLeave();
-			handleMonoMouseLeave();
-		},
-	);
 
 	if (serifFonts.length === 0 || monoFonts.length === 0) {
-		return null; // Wait for fonts to load
+		return null;
 	}
 
 	const currentSerif = serifFonts[serifIndex];
@@ -277,15 +119,15 @@ export default function About() {
 				<div
 					ref={serifColRef}
 					className='about-col'
-					onMouseMove={handleSerifMouseMove}
-					onMouseLeave={handleSerifMouseLeave}>
+					onMouseEnter={nextSerif}
+					onClick={nextSerif}>
 					<div className='about-act-label'>ACT I</div>
 					<h2 className={serifTitleClass}>The Drama Script</h2>
 					<div className='about-text-wrapper'>
 						<p className={serifBodyClass}>
 							Twenty years contributing to 60+ stage and screen productions,
-							including work on BAFTA-nominated and RTA-winning projects. Thousands
-							of scripts, rewrites, retakes, and a drive to get it right every time.
+							including work on BAFTA-nominated and RTA-winning projects. Countless
+              scripts, rewrites, retakes, and a need to get it right every time.
 						</p>
 						<p className={serifBodyClass}>
 							Film taught me the real power of collaboration. Theatre taught me that
@@ -295,37 +137,25 @@ export default function About() {
 					<div className='about-font-credit-inline'>{currentSerifLabel}</div>
 				</div>
 
-				{/* Divider */}
-				<div
-					ref={dividerRef}
-					className='about-divider'
-					onMouseMove={() => {
-						handleSerifMouseMove();
-						handleMonoMouseMove();
-					}}
-					onMouseLeave={() => {
-						handleSerifMouseLeave();
-						handleMonoMouseLeave();
-					}}
-				/>
+				<div className='about-divider' />
 
 				{/* Right — The Server */}
 				<div
 					ref={monoColRef}
 					className='about-col'
-					onMouseMove={handleMonoMouseMove}
-					onMouseLeave={handleMonoMouseLeave}>
+					onMouseEnter={nextMono}
+					onClick={nextMono}>
 					<div className='about-act-label'>ACT II</div>
 					<h2 className={monoTitleClass}>The JavaScript</h2>
 					<div className='about-text-wrapper'>
 						<p className={monoBodyClass}>
-							CUT TO: My VS Code terminal. It's 1 AM and I'm reinstalling <i>node_modules</i>
-							for the fifth time tonight. 
+							CUT TO: My VS Code terminal. It's 1 AM and I'm reinstalling <i>node_modules </i>
+							for the fifth time tonight.
 						</p>
 						<p className={monoBodyClass}>
 							I've been hacking games and writing community plugins since 2006, and trained as
-							a full-stack web dev in 2021. I love software, from the open-source
-              collaboration to that euphoric feeling when you finally crush a problem.
+							a full-stack web dev in 2021. Software is just theatre for machines,
+              the truth still behind a curtain.
 						</p>
 					</div>
 					<div className='about-font-credit-inline'>{currentMonoLabel}</div>

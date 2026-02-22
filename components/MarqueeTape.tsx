@@ -3,136 +3,191 @@
 import { useEffect, useRef, useState } from 'react';
 import { useScroll, useVelocity } from 'framer-motion';
 import { useHoverOnScroll } from '@/hooks/useHoverOnScroll';
+import gsap from 'gsap';
 
 const ITEMS = [
-  // Frontend
   'NEXT.JS', 'REACT', 'TYPESCRIPT', 'REACT NATIVE',
-  // Backend
   'NODE.JS', 'EXPRESS', 'PYTHON', 'POWERSHELL',
-  // Databases
   'SQL SERVER', 'POSTGRESQL', 'MONGODB',
-  // APIs & Services
   'REST API', 'OAUTH', 'COOKIES', 'WEBSOCKETS', 'JWT',
-  // Infrastructure
   'AZURE', 'CLOUDFLARE', 'SUPABASE', 'TABLEAU',
-  // CMS & Frameworks
   'WORDPRESS', 'BOOTSTRAP', 'TAILWIND',
-  // Tools
   'GIT', 'AGENTIC WORKFLOWS',
-  // Achievements
   'BAFTA PRESENTER', 'PADI CERTIFIED', 'MHFA QUALIFIED',
   'PERFECT LIGHTHOUSE SCORE', 'WCAG AAA COMPLIANT',
 ];
 
+// Tween duration — controls base speed (higher = slower)
+const DURATION = 40;
+
 export default function MarqueeTape() {
-  const sectionRef   = useRef<HTMLElement>(null);
-  const trackRef     = useRef<HTMLDivElement>(null);
-  const firstSetRef  = useRef<HTMLDivElement>(null);
-  const posRef       = useRef(0);
-  const rafRef       = useRef<number>(0);
-  const hoveredRef   = useRef(false);
-  const halfWidthRef = useRef(0);
-  const draggingRef  = useRef(false);
-  const dragStartXRef = useRef(0);
-  const dragPosRef   = useRef(0);
-  const speedRef     = useRef(1.8);
-  const prevTimeRef  = useRef(0);
-  const velRef       = useRef(0);
+  const sectionRef  = useRef<HTMLElement>(null);
+  const trackRef    = useRef<HTMLDivElement>(null);
+  const firstSetRef = useRef<HTMLDivElement>(null);
+  const tweenRef    = useRef<gsap.core.Tween | null>(null);
+  const hoveredRef  = useRef(false);
+  const scrollVelRef = useRef(0);
+  const speedRef    = useRef(0.8);
+  const setWidthRef = useRef(0);
+
+  // Drag state
+  const draggingRef    = useRef(false);
+  const dragStartXRef  = useRef(0);
+  const dragXRef       = useRef(0);
+  const dragSamplesRef = useRef<{ x: number; t: number }[]>([]);
   const [hovered, setHovered] = useState(false);
 
   const { scrollY } = useScroll();
   const scrollVelocity = useVelocity(scrollY);
 
-  // Sample velocity outside the rAF loop — once per Framer Motion update
   useEffect(() => {
     const unsub = scrollVelocity.on('change', (v) => {
-      velRef.current = Math.abs(v);
+      scrollVelRef.current = Math.abs(v);
     });
     return unsub;
   }, [scrollVelocity]);
 
-  useHoverOnScroll(
-    sectionRef,
-    () => { hoveredRef.current = true; setHovered(true); },
-    () => { hoveredRef.current = false; setHovered(false); }
-  );
-
-  // Measure half-width (one full set of items)
   useEffect(() => {
     const track = trackRef.current;
-    if (!track) return;
+    const firstSet = firstSetRef.current;
+    if (!track || !firstSet) return;
 
-    const measure = () => {
-      if (firstSetRef.current) {
-        halfWidthRef.current = firstSetRef.current.getBoundingClientRect().width;
-      }
+    setWidthRef.current = firstSet.getBoundingClientRect().width;
+    const ro = new ResizeObserver(() => {
+      setWidthRef.current = firstSet.getBoundingClientRect().width;
+    });
+    ro.observe(firstSet);
+
+    // Main tween — infinite loop
+    const tween = gsap.to(track, {
+      x: () => -setWidthRef.current,
+      duration: DURATION,
+      ease: 'none',
+      repeat: -1,
+    });
+    tween.timeScale(0.8);
+    tweenRef.current = tween;
+
+    // Ticker — smoothly lerp timeScale toward target
+    const onTick = () => {
+      if (draggingRef.current) return;
+
+      const base  = hoveredRef.current ? 0.2 : 0.8;
+      const boost = hoveredRef.current ? 0 : Math.min(scrollVelRef.current / 350, 5);
+      const target = base + boost;
+
+      scrollVelRef.current *= 0.92;
+
+      // Gentle lerp — coasts smoothly from any speed (including flick) back to base
+      speedRef.current += (target - speedRef.current) * 0.04;
+      tween.timeScale(speedRef.current);
     };
-    measure();
 
-    const ro = new ResizeObserver(measure);
-    ro.observe(track);
-    return () => ro.disconnect();
+    gsap.ticker.add(onTick);
+
+    return () => {
+      gsap.ticker.remove(onTick);
+      tween.kill();
+      ro.disconnect();
+    };
   }, []);
 
-  // Animation loop — delta-time based for frame-rate independence
+  // On mobile, clear hover when user touches anywhere else on the page
   useEffect(() => {
-    const tick = (now: number) => {
-      if (trackRef.current) {
-        // Delta time in seconds, capped at 50ms to avoid jumps after tab-switch
-        const dt = prevTimeRef.current ? Math.min((now - prevTimeRef.current) / 1000, 0.05) : 1 / 60;
-        prevTimeRef.current = now;
+    const section = sectionRef.current;
+    if (!section) return;
 
-        if (!draggingRef.current) {
-          const base   = hoveredRef.current ? 25 : 110;
-          const boost  = hoveredRef.current ? 0 : velRef.current * 0.7;
-          const target = Math.min(base + boost, 300);
-
-          // Lerp speed — fast enough to feel responsive, slow enough to never jitter
-          speedRef.current += (target - speedRef.current) * Math.min(dt * 4, 1);
-
-          posRef.current -= speedRef.current * dt;
-        }
-
-        const half = halfWidthRef.current;
-        if (half > 0) {
-          posRef.current = ((posRef.current % half) + half) % half - half;
-        }
-
-        trackRef.current.style.transform = `translate3d(${posRef.current}px,0,0)`;
+    const onTouchOutside = (e: TouchEvent) => {
+      if (!section.contains(e.target as Node) && hoveredRef.current) {
+        hoveredRef.current = false;
+        setHovered(false);
       }
-      rafRef.current = requestAnimationFrame(tick);
     };
 
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
+    document.addEventListener('touchstart', onTouchOutside, { passive: true });
+    return () => document.removeEventListener('touchstart', onTouchOutside);
   }, []);
+
+  useHoverOnScroll(
+    sectionRef,
+    () => { hoveredRef.current = true;  setHovered(true);  },
+    () => { hoveredRef.current = false; setHovered(false); },
+  );
 
   const enter = () => { hoveredRef.current = true;  setHovered(true);  };
-  const leave = () => { hoveredRef.current = false; setHovered(false); draggingRef.current = false; };
+  const leave = () => {
+    hoveredRef.current = false;
+    setHovered(false);
+    if (draggingRef.current) onDragEnd();
+  };
 
-  const onMouseDown = (e: React.MouseEvent) => {
-    draggingRef.current = true;
-    dragStartXRef.current = e.clientX;
-    dragPosRef.current = posRef.current;
-  };
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!draggingRef.current) return;
-    const delta = e.clientX - dragStartXRef.current;
-    posRef.current = dragPosRef.current + delta;
-  };
-  const onMouseUp = () => { draggingRef.current = false; };
+  // ── Drag handlers ──
 
-  const onTouchStart = (e: React.TouchEvent) => {
+  const onDragStart = (clientX: number) => {
+    const tween = tweenRef.current;
+    const track = trackRef.current;
+    if (!tween || !track) return;
+
     draggingRef.current = true;
-    dragStartXRef.current = e.touches[0].clientX;
-    dragPosRef.current = posRef.current;
+    dragStartXRef.current = clientX;
+    dragXRef.current = gsap.getProperty(track, 'x') as number;
+    dragSamplesRef.current = [{ x: clientX, t: performance.now() }];
+    tween.pause();
   };
-  const onTouchMove = (e: React.TouchEvent) => {
+
+  const onDragMove = (clientX: number) => {
+    const track = trackRef.current;
+    if (!draggingRef.current || !track) return;
+
+    const delta = clientX - dragStartXRef.current;
+    const w = setWidthRef.current;
+    let newX = dragXRef.current + delta;
+    if (w > 0) newX = ((newX % w) + w) % w - w;
+
+    gsap.set(track, { x: newX });
+
+    const samples = dragSamplesRef.current;
+    samples.push({ x: clientX, t: performance.now() });
+    if (samples.length > 4) samples.shift();
+  };
+
+  const onDragEnd = () => {
     if (!draggingRef.current) return;
-    const delta = e.touches[0].clientX - dragStartXRef.current;
-    posRef.current = dragPosRef.current + delta;
+    draggingRef.current = false;
+
+    const tween = tweenRef.current;
+    const track = trackRef.current;
+    if (!tween || !track) return;
+
+    // Sync tween progress to current drag position
+    const w = setWidthRef.current;
+    if (w > 0) {
+      const curX = gsap.getProperty(track, 'x') as number;
+      tween.progress((Math.abs(curX) / w) % 1);
+    }
+
+    // Convert flick velocity → timeScale so it coasts back to baseline via lerp
+    const samples = dragSamplesRef.current;
+    if (samples.length >= 2) {
+      const first = samples[0];
+      const last  = samples[samples.length - 1];
+      const dt = (last.t - first.t) / 1000;
+      if (dt > 0 && w > 0) {
+        const flickVel = (last.x - first.x) / dt; // px/s
+        const basePxPerSec = w / DURATION;         // px/s at timeScale 1
+        // Negative flick (left) → higher timeScale, positive (right) → lower/negative
+        speedRef.current = -flickVel / basePxPerSec;
+      }
+    }
+
+    tween.timeScale(speedRef.current);
+    tween.play();
   };
-  const onTouchEnd = () => { draggingRef.current = false; };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onDragStart(e.clientX);
+  };
 
   return (
     <section
@@ -140,24 +195,20 @@ export default function MarqueeTape() {
       className="marquee-section"
       onMouseEnter={enter}
       onMouseLeave={leave}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={(e) => onDragMove(e.clientX)}
+      onMouseUp={onDragEnd}
+      onTouchStart={(e) => {
+        hoveredRef.current = true;
+        setHovered(true);
+        onDragStart(e.touches[0].clientX);
+      }}
+      onTouchMove={(e) => onDragMove(e.touches[0].clientX)}
+      onTouchEnd={onDragEnd}
     >
       <div className={`marquee-wrapper${hovered ? ' hovered' : ''}`}>
         <div ref={trackRef} className="marquee-track">
           <div ref={firstSetRef} className="marquee-set">
-            {ITEMS.map((item, i) => (
-              <span key={i} className="marquee-item">
-                {item}
-                <span className="marquee-dot" />
-              </span>
-            ))}
-          </div>
-          <div aria-hidden="true" className="marquee-set">
             {ITEMS.map((item, i) => (
               <span key={i} className="marquee-item">
                 {item}
