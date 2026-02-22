@@ -285,8 +285,7 @@ export default function About() {
 						<p className={serifBodyClass}>
 							Twenty years contributing to 60+ stage and screen productions,
 							including work on BAFTA-nominated and RTA-winning projects. Thousands
-							of scripts, rewrites, retakes, and a drive to perfect every scenario I
-							approached.
+							of scripts, rewrites, retakes, and a drive to get it right every time.
 						</p>
 						<p className={serifBodyClass}>
 							Film taught me the real power of collaboration. Theatre taught me that
@@ -317,17 +316,17 @@ export default function About() {
 					onMouseMove={handleMonoMouseMove}
 					onMouseLeave={handleMonoMouseLeave}>
 					<div className='about-act-label'>ACT II</div>
-					<h2 className={monoTitleClass}>The Javascript</h2>
+					<h2 className={monoTitleClass}>The JavaScript</h2>
 					<div className='about-text-wrapper'>
 						<p className={monoBodyClass}>
-							CUT TO: My VSCode terminal. It's 1 AM and I'm reinstalling node_modules
+							CUT TO: My VS Code terminal. It's 1 AM and I'm reinstalling <i>node_modules</i>
 							for the fifth time tonight. It still feels like a drama, but all I hear
               are the clicks of my keyboard and the hum of the PC fans.
 						</p>
 						<p className={monoBodyClass}>
-							I've been hacking games and writing plugins since 2006, trained as
-							a full-stack web dev in 2021. I love software; from the open-source
-              collaboration to that euphoric feeling you get when you finally crush a problem.  
+							I've been hacking games and writing community plugins since 2006, and trained as
+							a full-stack web dev in 2021. I love software, from the open-source
+              collaboration to that euphoric feeling when you finally crush a problem.
 						</p>
 					</div>
 					<div className='about-font-credit-inline'>{currentMonoLabel}</div>
