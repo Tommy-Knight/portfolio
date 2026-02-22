@@ -1,13 +1,22 @@
 import { useEffect, useRef } from 'react';
 
-// Global mouse position tracker — null until the mouse has actually moved.
-// On touch/mobile devices mousemove never fires, so this stays null and the
-// scroll-hover logic is skipped entirely, preventing phantom hover triggers.
+// Global mouse position tracker — null until a real mouse has moved.
+// After a touch event, we suppress mouse tracking for a short window to
+// ignore synthetic mousemove events browsers fire after taps, while still
+// allowing hybrid devices (e.g. Surface) to resume mouse hover later.
 let globalMouseX: number | null = null;
 let globalMouseY: number | null = null;
+let touchCooldownUntil = 0;
 
 if (typeof window !== 'undefined') {
+  document.addEventListener('touchstart', () => {
+    touchCooldownUntil = Date.now() + 1000;
+    globalMouseX = null;
+    globalMouseY = null;
+  });
+
   document.addEventListener('mousemove', (e) => {
+    if (Date.now() < touchCooldownUntil) return;
     globalMouseX = e.clientX;
     globalMouseY = e.clientY;
   });
