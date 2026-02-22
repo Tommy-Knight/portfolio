@@ -320,8 +320,7 @@ export default function About() {
 					<div className='about-text-wrapper'>
 						<p className={monoBodyClass}>
 							CUT TO: My VS Code terminal. It's 1 AM and I'm reinstalling <i>node_modules</i>
-							for the fifth time tonight. It still feels like a drama, but all I hear
-              are the clicks of my keyboard and the hum of the PC fans.
+							for the fifth time tonight. 
 						</p>
 						<p className={monoBodyClass}>
 							I've been hacking games and writing community plugins since 2006, and trained as
