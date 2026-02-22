@@ -96,8 +96,7 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 10000;
-  min-width: 420px;
-  max-width: 90vw;
+  width: min(420px, 90vw);
 }
 
 .loader-line {
