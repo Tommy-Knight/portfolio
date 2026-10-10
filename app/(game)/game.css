@@ -1,0 +1,224 @@
+/* ============================================================
+   /t — NEON ARCADE
+   Standalone styles. Shares nothing with the portfolio.
+   ============================================================ */
+
+:root {
+  --t-bg:     #000;
+  --t-cyan:   #00f0ff;
+  --t-pink:   #ff2d95;
+  --t-text:   #eaf6ff;
+  --t-dim:    #6b7a90;
+  --t-font:   var(--font-game, 'Orbitron', system-ui, sans-serif);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--t-bg);
+  color: var(--t-text);
+  font-family: var(--t-font);
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.t-root {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background: radial-gradient(120% 80% at 50% 0%, #0a0620 0%, #000 60%);
+}
+
+.t-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  font-family: var(--t-font);
+}
+
+/* ── Overlays ───────────────────────────────────────────────── */
+.t-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-align: center;
+}
+
+.t-title {
+  font-size: clamp(5rem, 34vw, 11rem);
+  font-weight: 900;
+  line-height: 0.9;
+  color: #fff;
+  text-shadow: 0 0 8px #fff, 0 0 24px var(--t-cyan), 0 0 60px var(--t-cyan), 0 0 110px var(--t-pink);
+  animation: t-flicker 4s infinite;
+}
+
+.t-heading {
+  font-size: clamp(1.5rem, 8vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #fff;
+  text-shadow: 0 0 6px #fff, 0 0 22px var(--t-pink), 0 0 50px var(--t-pink);
+}
+
+.t-stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.5rem 1.4rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-align: left;
+}
+.t-stats dt { color: var(--t-dim); }
+.t-stats dd { color: #fff; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+
+.t-btn {
+  min-width: 13rem;
+  padding: 1rem 1.6rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--t-cyan);
+  background: rgba(0, 240, 255, 0.06);
+  border: 1.5px solid var(--t-cyan);
+  border-radius: 10px;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.45), inset 0 0 14px rgba(0, 240, 255, 0.18);
+  text-shadow: 0 0 10px var(--t-cyan);
+  touch-action: manipulation;
+}
+.t-btn:active { background: var(--t-cyan); color: #000; text-shadow: none; }
+
+.t-btn--ghost {
+  color: var(--t-dim);
+  border-color: #2a3242;
+  background: transparent;
+  box-shadow: none;
+  text-shadow: none;
+  font-size: 0.72rem;
+  padding: 0.8rem 1.2rem;
+}
+.t-btn--ghost:active { background: #2a3242; color: #fff; }
+
+.t-row { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+.t-row .t-btn { min-width: 0; }
+
+.t-help {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.45rem 1.1rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--t-dim);
+}
+.t-help b { color: var(--t-text); font-weight: 700; }
+
+.t-rotate { display: none; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .t-rotate { display: flex; z-index: 10; background: #000; }
+}
+
+@keyframes t-flicker {
+  0%, 18%, 22%, 62%, 64%, 100% { opacity: 1; }
+  20%, 63% { opacity: 0.72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-title { animation: none; }
+}
+
+/* ── Lobby, countdown, spectating ───────────────────────────── */
+.t-input {
+  width: min(16rem, 80vw);
+  padding: 0.9rem 1rem;
+  font: inherit;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(255, 45, 149, 0.06);
+  border: 1.5px solid var(--t-pink);
+  border-radius: 10px;
+  box-shadow: 0 0 14px rgba(255, 45, 149, 0.4), inset 0 0 14px rgba(255, 45, 149, 0.15);
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.t-players {
+  list-style: none;
+  width: min(18rem, 84vw);
+  display: grid;
+  gap: 0.6rem;
+}
+.t-players li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #2a3242;
+  border-radius: 10px;
+  background: rgba(4, 6, 14, 0.8);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  color: var(--t-dim);
+}
+.t-players b { font-size: 0.95rem; letter-spacing: 0.12em; text-shadow: 0 0 10px currentColor; }
+.t-players .t-players__empty { justify-content: center; border-style: dashed; animation: t-pulse 1.6s ease-in-out infinite; }
+
+.t-overlay--clear { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; pointer-events: none; }
+
+.t-count {
+  font-size: clamp(7rem, 46vw, 14rem);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 8px #fff, 0 0 30px var(--t-pink), 0 0 80px var(--t-pink);
+  animation: t-pop 0.9s ease-out both;
+}
+
+.t-watchbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  color: var(--t-dim);
+}
+.t-watchbar b { color: var(--t-pink); text-shadow: 0 0 10px var(--t-pink); }
+.t-watchbar .t-btn { min-width: 0; }
+
+@keyframes t-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+@keyframes t-pop { from { transform: scale(1.6); opacity: 0; } 25% { opacity: 1; } to { transform: scale(0.9); opacity: 0.85; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .t-count, .t-players .t-players__empty { animation: none; }
+}
