@@ -1,0 +1,10 @@
+Reference voxel characters in ./vox are from
+
+  Mini Mike's Metro Minis by Mike Judge (mikelovesrobots)
+  https://github.com/mikelovesrobots/mmmm
+
+licensed under Creative Commons Attribution 4.0 International
+  https://creativecommons.org/licenses/by/4.0/
+
+Not modified. Included here as visual reference only; they are not game
+assets and nothing in the game depends on them.

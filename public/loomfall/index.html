@@ -1,0 +1,3095 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <title>Loomfall — voxel pipeline test</title>
+    <!-- Rubik for headings, numbers and hitsplats (its squared, rounded
+         corners sit with the voxels); Nunito for everything read at length.
+         Chosen in the 2026-09-22 art pass; the old monospace stays one dev
+         switch away (ui.font). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Nunito:wght@400;600;700&family=Quantico:wght@400;700&family=Rubik:wght@500;700;800&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0e1116;
+        font: 600 13px/1.4 Nunito, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        color: #c9d1d9;
+        /* Stop mobile browsers hijacking drags as page scroll / pinch zoom. */
+        touch-action: none;
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+      }
+      #renderCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        outline: none;
+        touch-action: none;
+      }
+      #hud {
+        position: fixed;
+        top: max(8px, env(safe-area-inset-top));
+        left: max(8px, env(safe-area-inset-left));
+        max-width: min(420px, calc(100vw - 24px));
+        padding: 8px 11px;
+        /* Warm and dark, like a worn leather-bound card, to sit with the
+           world's palette rather than on top of it. */
+        background: rgba(40, 30, 24, 0.84);
+        border: 2px solid #5e4731;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 1px rgba(240, 210, 160, 0.14), 0 3px 10px rgba(0, 0, 0, 0.35);
+        color: #efe2c8;
+        white-space: pre-wrap;
+        pointer-events: none;
+      }
+      #hud.error {
+        border-color: #f85149;
+        color: #ffa198;
+      }
+      /* Hidden by the look settings unless it is carrying an error. */
+      #hud:empty,
+      #hud.quiet:not(.error) {
+        display: none;
+      }
+
+      /* The dev panel (ui/devPanel.ts): look settings, dev builds only, toggled
+         with the ` key. Plain
+         and neutral on purpose, so it never reads as part of the game's own
+         interface while that interface is the thing being judged. */
+      .dev-panel {
+        position: fixed;
+        z-index: 29;
+        top: max(10px, env(safe-area-inset-top));
+        left: max(10px, env(safe-area-inset-left));
+        width: 300px;
+        max-height: calc(100dvh - 76px);
+        display: flex;
+        flex-direction: column;
+        background: rgba(16, 18, 24, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        color: #dfe3ea;
+        font: 12px/1.35 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        user-select: none;
+      }
+      .dev-panel.hidden {
+        display: none;
+      }
+      .dev-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px 6px;
+      }
+      .dev-title {
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+      }
+      .dev-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        background: none;
+        color: #aab2bf;
+        font-size: 20px;
+        cursor: pointer;
+      }
+      .dev-presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0 12px 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .dev-button {
+        flex: 1;
+        min-height: 34px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.06);
+        color: #eef1f5;
+        font: 600 12px system-ui, sans-serif;
+        cursor: pointer;
+      }
+      .dev-button:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .dev-scroll {
+        overflow-y: auto;
+        padding: 4px 12px 12px;
+        scrollbar-width: thin;
+        touch-action: pan-y;
+      }
+      .dev-section {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 4px 0;
+      }
+      .dev-section summary {
+        cursor: pointer;
+        padding: 8px 0;
+        font-weight: 600;
+        color: #e8d9b0;
+      }
+      .dev-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 36px;
+      }
+      .dev-label {
+        flex: 1;
+        min-width: 0;
+      }
+      .dev-row input[type='checkbox'] {
+        width: 20px;
+        height: 20px;
+        accent-color: #e2b25c;
+      }
+      .dev-row input[type='range'] {
+        flex: 0 0 120px;
+        accent-color: #e2b25c;
+      }
+      .dev-row input[type='color'] {
+        flex: 0 0 48px;
+        height: 30px;
+        padding: 0 2px;
+        background: #22262e;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 6px;
+      }
+      .dev-row.colour .dev-value {
+        flex-basis: 64px;
+      }
+      .dev-row select {
+        flex: 0 0 150px;
+        min-height: 30px;
+        background: #22262e;
+        color: #eef1f5;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 6px;
+        font: inherit;
+      }
+      .dev-value {
+        flex: 0 0 34px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        color: #aab2bf;
+      }
+      .dev-note {
+        margin: -4px 0 4px;
+        font-size: 10.5px;
+        color: #8a93a1;
+      }
+      /* Phone: a sheet over the lower half, so the world stays in view above
+         it while a slider moves. */
+      @media (max-width: 700px) {
+        .dev-panel {
+          top: auto;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: auto;
+          max-height: 52dvh;
+          border-radius: 14px 14px 0 0;
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        .dev-row input[type='range'] {
+          flex-basis: 130px;
+        }
+      }
+      #hud a {
+        color: #58a6ff;
+        pointer-events: auto;
+      }
+
+      /* The dock (ui/dock.ts): chat, pack, gear, spells, skills and stats in
+         one tabbed box along the bottom. Tabs on top, content at one fixed
+         height under them, so switching tab never resizes the box. */
+      .dock {
+        --pad: 8px;
+        --gap: 4px;
+        --cols: 14;
+        --body-h: 140px;
+        /* Outer width, frame included: each skin's frame is a different
+           thickness, and the cap has to hold for the whole box or it runs
+           off a screen just wider than a phone. */
+        --dock-w: 624px;
+        position: fixed;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        box-sizing: border-box;
+        width: min(var(--dock-w), calc(100vw - 24px));
+        background: rgba(40, 30, 24, 0.92);
+        border: 2px solid #5e4731;
+        border-radius: 8px;
+        box-shadow: inset 0 0 0 1px rgba(240, 210, 160, 0.14), 0 3px 10px rgba(0, 0, 0, 0.35);
+        color: #efe2c8;
+        user-select: none;
+      }
+      .dock-tabs {
+        display: flex;
+        align-items: stretch;
+        border-bottom: 2px solid #5e4731;
+      }
+      .dock.collapsed .dock-tabs {
+        border-bottom: none;
+      }
+      .dock-tab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 11px;
+        color: #b6a284;
+        background: transparent;
+        border: none;
+        border-right: 1px solid #4a3826;
+        font: 600 11px system-ui, sans-serif;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+      }
+      .dock-tab:first-child {
+        border-top-left-radius: 6px;
+      }
+      .pack-icon {
+        image-rendering: pixelated;
+        display: block;
+      }
+      .dock-tab img {
+        display: block;
+        opacity: 0.8;
+        transition: opacity 0.12s;
+      }
+      .dock-tab:hover img,
+      .dock-tab.active img {
+        opacity: 1;
+      }
+      .dock-tab svg {
+        display: block;
+        opacity: 0.72;
+        filter: saturate(0.7);
+        transition: opacity 0.12s, filter 0.12s;
+      }
+      .dock-tab:hover {
+        background: rgba(94, 71, 49, 0.5);
+        color: #efe2c8;
+      }
+      .dock-tab:hover svg,
+      .dock-tab.active svg {
+        opacity: 1;
+        filter: none;
+      }
+      .dock-tab.active {
+        background: #5e4731;
+        color: #f6e7c6;
+        box-shadow: inset 0 -2px 0 #c8a35f;
+      }
+      .dock-badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        color: #f2c56b;
+        font: 900 13px/1 system-ui, sans-serif;
+        text-shadow: 0 1px 0 #0a0c16, 1px 0 0 #0a0c16, -1px 0 0 #0a0c16, 0 -1px 0 #0a0c16;
+        pointer-events: none;
+      }
+      .dock-badge[hidden] {
+        display: none;
+      }
+      .dock.collapsed {
+        width: max-content;
+      }
+      .dock.collapsed .dock-meta,
+      .dock.collapsed .dock-tab-label {
+        display: none;
+      }
+      .dock-fold {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        color: #b6a284;
+        background: transparent;
+        border: none;
+        border-left: 1px solid #4a3826;
+        cursor: pointer;
+      }
+      .dock-fold:hover {
+        background: rgba(94, 71, 49, 0.5);
+        color: #efe2c8;
+      }
+      .dock-fold svg {
+        display: block;
+        transition: transform 0.14s;
+      }
+      .dock.collapsed .dock-fold svg {
+        transform: rotate(180deg);
+      }
+      .dock-meta {
+        margin-left: auto;
+        align-self: center;
+        padding: 0 10px;
+        font-size: 10.5px;
+        color: #8a755a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* Everything under the tabs is written on the story card's parchment
+         (one sheet behind every pane, ui/creatorArt.ts), in its ink, inside
+         the skin's frame. */
+      .dock-body {
+        --ink: #3b2b1d;
+        --ink-soft: #6a5438;
+        --ink-rule: rgba(59, 43, 29, 0.32);
+        --red-ink: #a0302a;
+        --serif: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+        --serif-sc: 'IM Fell English SC', 'IM Fell English', Georgia, serif;
+        position: relative;
+        isolation: isolate;
+        /* The dock sets the width, never the content: folded, the box is
+           max-content, and long chat lines would stretch it. */
+        contain: inline-size;
+        height: var(--body-h);
+        overflow: hidden;
+        transition: height 0.14s ease-out;
+        font-family: var(--serif);
+        color: var(--ink);
+      }
+      .dock.collapsed .dock-body {
+        height: 0;
+      }
+      .dock-content {
+        /* Inside the card's inner rule (15.5px in). A margin, not padding:
+           a scroll box's padding scrolls with it, and the rows would run
+           over the frame; a margin clips them under it. */
+        height: calc(100% - 35px);
+        margin: 18px 22px 17px;
+        padding: 0;
+        box-sizing: border-box;
+        overflow: hidden auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--ink-rule) transparent;
+      }
+      .dock-content[hidden],
+      .chat-box[hidden] {
+        display: none;
+      }
+      /* The ability bar (ui/abilityBar.ts): three bubbles beside the dock's
+         bottom right. On a screen too narrow for that, above the dock's
+         right end instead. */
+      .ability-bar {
+        position: absolute;
+        left: calc(100% + 12px);
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        user-select: none;
+        transition: transform 0.25s ease;
+      }
+      @media (max-width: 960px) {
+        .ability-bar {
+          left: auto;
+          right: 0;
+          bottom: calc(100% + 34px);
+        }
+      }
+      .ability-row {
+        display: flex;
+        gap: 8px;
+      }
+      .ability-col {
+        position: relative;
+      }
+      /* One bubble: a round well in the woven brown, the icon at 2x. */
+      .ability-slot,
+      .ability-opt {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 40% 35%, #3a2a1c, #1a120c 70%);
+        border: 2px solid #7a5d3e;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px #000, inset 0 0 0 1px rgba(240, 210, 160, 0.1);
+        overflow: hidden;
+        cursor: pointer;
+        font: inherit;
+      }
+      .ability-slot:hover,
+      .ability-opt:hover {
+        border-color: #c8a35f;
+      }
+      .ability-slot.armed {
+        border-color: #f2c14e;
+        box-shadow: 0 0 0 1px #000, 0 0 12px 3px rgba(242, 110, 80, 0.7), inset 0 0 10px rgba(242, 110, 80, 0.55);
+      }
+      .ability-slot.poor .ability-art,
+      .ability-opt.poor .ability-art {
+        filter: grayscale(1) brightness(0.55);
+      }
+      .ability-slot.locked,
+      .ability-opt.locked {
+        border-color: #5a4a3a;
+      }
+      .ability-slot.locked .ability-art {
+        filter: brightness(0.45);
+      }
+      .ability-art canvas {
+        image-rendering: pixelated;
+        width: 32px;
+        height: 32px;
+        display: block;
+      }
+      /* Cooldown: a dark wedge that sweeps back round, clockwise. */
+      .ability-sweep {
+        position: absolute;
+        inset: 0;
+        --cd: 0;
+        background: conic-gradient(rgba(8, 5, 3, 0.7) calc(var(--cd) * 360deg), transparent 0);
+        pointer-events: none;
+      }
+      .ability-count,
+      .ability-key,
+      .ability-cost {
+        position: absolute;
+        font-size: 11px;
+        line-height: 1;
+        text-shadow: 1px 1px 0 #000, -1px 0 0 #000, 0 -1px 0 #000;
+        pointer-events: none;
+      }
+      .ability-count {
+        top: 5px;
+        left: 7px;
+        color: #f2d27a;
+      }
+      .ability-key {
+        bottom: 4px;
+        right: 8px;
+        color: #cdb896;
+      }
+      /* Seconds left on a cooldown, centred over the sweep. */
+      .ability-cost {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 16px;
+        font-weight: bold;
+        color: #fff4d2;
+      }
+      /* The four alternatives, tucked under the bubble until right-click
+         slides them out above it, one after another. */
+      .ability-fly {
+        position: absolute;
+        left: 5px;
+        bottom: 5px;
+        width: 40px;
+        height: 40px;
+        z-index: 2;
+        pointer-events: none;
+      }
+      .ability-opt {
+        position: absolute;
+        left: -3px;
+        bottom: -3px;
+        width: 46px;
+        height: 46px;
+        opacity: 0;
+        transform: translateY(0) scale(0.6);
+        transition:
+          transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+          opacity 0.12s linear;
+        transition-delay: calc(var(--i) * 0.025s);
+      }
+      .ability-opt .ability-art canvas {
+        width: 32px;
+        height: 32px;
+      }
+      .ability-col.open .ability-fly {
+        pointer-events: auto;
+      }
+      /* The bubble sits above its flyout, so the options slide out from
+         under it and never pass beneath a cursor resting on it. */
+      .ability-slot {
+        z-index: 3;
+      }
+      .ability-col.open .ability-opt {
+        opacity: 1;
+        transform: translateY(calc((var(--i) + 1) * -52px - 6px)) scale(1);
+      }
+      .ability-col.open .ability-slot {
+        border-color: #f2d27a;
+      }
+      /* The dock's transform makes it its own layer, under the minimap and
+         its orbs; on a phone an open flyout climbs into them, so lift it. */
+      .dock:has(.ability-col.open) {
+        z-index: 4;
+      }
+      /* The card, in the mouse tooltip's own dress (.mouse-tooltip): the
+         same plate, the same ink, the gold for the name. */
+      .ability-tip {
+        position: absolute;
+        box-sizing: border-box;
+        width: 220px;
+        padding: 5px 8px 6px;
+        background: rgba(28, 20, 15, 0.9);
+        border: 1px solid #5e4731;
+        border-radius: 4px;
+        color: #efe2c8;
+        font-size: 11px;
+        line-height: 1.35;
+        pointer-events: none;
+        z-index: 3;
+      }
+      .ability-tip-name {
+        color: #e2b25c;
+        font-size: 12px;
+      }
+      /* The window kit: every window but the dock is one sheet of the story
+         card's paper in its ink (ui/creatorArt.ts `backWithCard`). The
+         journal, the stash, the loom, the cauldron and the enchanter all
+         dress from these tokens; nothing in them is red. */
+      .win {
+        --ink: #3b2b1d;
+        --ink-soft: #6a5438;
+        --ink-rule: rgba(59, 43, 29, 0.32);
+        --ink-wash: rgba(59, 43, 29, 0.1);
+        --ink-wash-strong: rgba(59, 43, 29, 0.2);
+        --warn-ink: #8a3a1e;
+        --serif: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+        --serif-sc: 'IM Fell English SC', 'IM Fell English', Georgia, serif;
+        position: relative;
+        isolation: isolate;
+        color: var(--ink);
+        font: 15px/1.35 var(--serif);
+      }
+      /* Bookmarks: a strip of darker paper with an ink edge. */
+      .win-tab {
+        font: 15px var(--serif-sc);
+        color: var(--ink);
+        background: #e3d5b4;
+        border: 1px solid var(--ink-rule);
+        border-radius: 0 4px 4px 0;
+        padding: 5px 14px 5px 10px;
+        text-align: left;
+        cursor: pointer;
+        box-shadow: 1px 2px 3px rgba(40, 24, 10, 0.25);
+      }
+      .win-tab:hover {
+        background: #ebdfc2;
+      }
+      .win-tab.chosen {
+        background: #f3e9cf;
+        border-left-width: 4px;
+        border-left-color: var(--ink);
+        font-weight: bold;
+      }
+      .win-heading {
+        font: 17px var(--serif-sc);
+        color: var(--ink);
+        margin-top: 10px;
+        border-bottom: 1px solid var(--ink-rule);
+      }
+      .win-close {
+        background: none;
+        border: none;
+        font: 26px/1 var(--serif);
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+      .win-close:hover {
+        color: var(--ink);
+      }
+      /* Station windows (src/ui/stationWindow.ts): centred, not modal, the
+         world running behind. Full screen on a phone. */
+      .station-window {
+        position: fixed;
+        left: 50%;
+        top: 44%;
+        transform: translate(-50%, -50%);
+        width: min(680px, calc(100vw - 32px));
+        max-height: min(580px, calc(100vh - 150px));
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        padding: 24px 30px 26px;
+        z-index: 30;
+      }
+      .station-window.hidden {
+        display: none;
+      }
+      .station-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid var(--ink-rule);
+      }
+      .station-title {
+        flex: 1;
+        font: 22px var(--serif-sc);
+        color: var(--ink);
+        letter-spacing: 0.03em;
+      }
+      .station-close {
+        background: none;
+        border: none;
+        font: 26px/1 var(--serif);
+        color: var(--ink-soft);
+        cursor: pointer;
+        padding: 0 4px;
+      }
+      .station-close:hover {
+        color: var(--ink);
+      }
+      .station-body {
+        display: flex;
+        gap: 12px;
+        min-height: 0;
+        flex: 1;
+        overflow: hidden;
+      }
+      .station-pane {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-height: 0;
+      }
+      .station-pane.grow {
+        flex: 1;
+        min-width: 0;
+      }
+      .station-pane.scroll,
+      .station-grid.stash {
+        overflow-y: auto;
+      }
+      .station-label {
+        color: var(--ink-soft);
+        font-size: 14px;
+      }
+      /* The Mender's board: her line, the count, and a bar under it. */
+      .station-note {
+        color: var(--ink-soft);
+        font-size: 13px;
+        max-width: 34ch;
+        margin: 2px 0 8px;
+      }
+      .station-row {
+        font: 16px var(--serif-sc);
+        color: var(--red-ink);
+        margin: 2px 0 6px;
+      }
+      .contract-bar {
+        width: 100%;
+        max-width: 34ch;
+        height: 8px;
+        border: 1px solid var(--ink-soft);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 4px 0 10px;
+      }
+      .contract-fill {
+        height: 100%;
+        background: var(--red-ink);
+        transition: width 0.3s ease;
+      }
+      .station-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 40px);
+        gap: 3px;
+        align-content: start;
+      }
+      .station-grid.pack {
+        grid-template-columns: repeat(4, 40px);
+      }
+      .station-slot {
+        width: 40px;
+        height: 40px;
+        box-sizing: border-box;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .station-footer {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+        margin-top: 8px;
+      }
+      .station-footer:empty {
+        display: none;
+      }
+      .station-button {
+        background: #e3d5b4;
+        border: 1px solid var(--ink-rule);
+        border-radius: 3px;
+        color: var(--ink);
+        padding: 4px 14px;
+        font: 15px var(--serif-sc);
+        cursor: pointer;
+        box-shadow: 1px 1px 2px rgba(40, 24, 10, 0.2);
+      }
+      .station-button:hover:not(:disabled) {
+        background: #ebdfc2;
+      }
+      .station-button.primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: #f3e9cf;
+      }
+      .station-button.primary:hover:not(:disabled) {
+        background: #54402b;
+      }
+      .station-button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .station-button.chosen {
+        background: #f3e9cf;
+        box-shadow: inset 0 0 0 2px var(--ink);
+        font-weight: bold;
+      }
+      @media (max-width: 640px) {
+        .station-window {
+          left: 0;
+          top: 0;
+          transform: none;
+          width: 100vw;
+          height: 100vh;
+          max-height: none;
+          border-radius: 0;
+        }
+        .station-body {
+          flex-direction: column;
+          overflow-y: auto;
+        }
+      }
+      /* The enchanter (src/ui/enchantWindow.ts). */
+      .enchant-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+        min-height: 0;
+      }
+      .enchant-tabs {
+        display: flex;
+        gap: 6px;
+        border-bottom: 1px solid var(--ink-rule);
+        padding-bottom: 0;
+      }
+      .enchant-tabs .win-tab {
+        border-radius: 4px 4px 0 0;
+        margin-bottom: -1px;
+      }
+      .enchant-tabs .win-tab.chosen {
+        border-left-width: 1px;
+        border-top: 3px solid var(--ink);
+      }
+      .enchant-body {
+        display: flex;
+        gap: 12px;
+        min-height: 0;
+        flex: 1;
+      }
+      .enchant-detail {
+        overflow-y: auto;
+        gap: 6px;
+      }
+      .enchant-sockets {
+        display: flex;
+        gap: 10px;
+        margin: 4px 0;
+      }
+      .enchant-socket {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px dashed var(--ink-rule);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .enchant-socket canvas {
+        width: 30px;
+        height: 30px;
+      }
+      .enchant-socket.full {
+        border-style: solid;
+        border-color: var(--gem, var(--ink));
+        box-shadow: 0 0 8px var(--gem, var(--ink-rule));
+      }
+      .enchant-socket.chosen {
+        outline: 2px solid #ffd45c;
+        outline-offset: 2px;
+      }
+      .enchant-gems,
+      .enchant-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .chosen-slot {
+        outline: 2px solid var(--ink);
+      }
+      .target-slot {
+        outline: 2px dashed #3f7a4e;
+      }
+      .risk-back {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .risk-card {
+        max-width: min(360px, calc(100vw - 32px));
+        padding: 14px 16px;
+        background: rgba(24, 28, 49, 0.97);
+        border: 1px solid #e2b25c;
+        color: #f3ebdd;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      /* The craft window (src/ui/craftWindow.ts): recipes left, detail right. */
+      .craft-list {
+        width: 220px;
+        flex: none;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+      .craft-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 4px;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+      .craft-row canvas {
+        width: 28px;
+        height: 28px;
+        flex: none;
+      }
+      .craft-row:hover {
+        background: var(--ink-wash);
+      }
+      .craft-row.chosen {
+        border-color: var(--ink-rule);
+        border-left: 4px solid var(--ink);
+        background: var(--ink-wash-strong);
+      }
+      .craft-row.locked {
+        opacity: 0.45;
+      }
+      .craft-row-name {
+        flex: 1;
+      }
+      .craft-row-level {
+        font-size: 12px;
+        color: var(--ink-soft);
+      }
+      .craft-detail {
+        overflow-y: auto;
+        gap: 8px;
+      }
+      .craft-detail-head {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .craft-detail-name {
+        font: 18px var(--serif-sc);
+        color: var(--ink);
+      }
+      .craft-detail-examine {
+        opacity: 0.75;
+        font-size: 12px;
+      }
+      .craft-need {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .craft-need canvas {
+        width: 24px;
+        height: 24px;
+      }
+      .craft-need.short {
+        color: var(--warn-ink);
+      }
+      .craft-facts {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 12px;
+      }
+      .craft-locked {
+        color: var(--warn-ink);
+      }
+      .craft-range {
+        color: var(--ink-soft);
+      }
+      .craft-floor,
+      .craft-best {
+        color: var(--ink);
+        font-weight: bold;
+      }
+      .craft-status {
+        margin-right: auto;
+        align-self: center;
+        opacity: 0.85;
+      }
+      /* A craft's roll, beside the XP drops. */
+      .quality-pop {
+        position: fixed;
+        right: 230px;
+        top: 150px;
+        z-index: 35;
+        color: #efe2c8;
+        font-size: 15px;
+        text-shadow: 0 1px 2px #000, 0 0 3px #000;
+        pointer-events: none;
+        animation: quality-rise 1.6s ease-out forwards;
+      }
+      .quality-pop.best {
+        color: #ffd45c;
+        font-size: 18px;
+        animation-duration: 2.6s;
+      }
+      .quality-pop.perfect {
+        color: #fff1b0;
+        font-size: 22px;
+        text-shadow: 0 0 8px #ffd45c, 0 1px 2px #000;
+      }
+      @keyframes quality-rise {
+        from { transform: translateY(0); opacity: 1; }
+        70% { opacity: 1; }
+        to { transform: translateY(-40px); opacity: 0; }
+      }
+      /* The journal (src/ui/journal.ts): a parchment book over the world,
+         bookmarks down the left edge. */
+      .journal {
+        position: fixed;
+        inset: 0;
+        z-index: 45;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(12, 8, 4, 0.55);
+      }
+      .journal.hidden {
+        display: none;
+      }
+      .journal-book {
+        width: min(980px, calc(100vw - 32px));
+        height: min(680px, calc(100vh - 48px));
+        display: flex;
+      }
+      .journal-tabs {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 44px 0 0 10px;
+        flex: none;
+      }
+      .journal-tab {
+        margin-left: -10px;
+      }
+      .journal-tab.chosen {
+        margin-left: 0;
+      }
+      .journal-page {
+        flex: 1;
+        min-width: 0;
+        /* A margin, not padding, so the page clips inside the frame. */
+        margin: 34px 40px 30px 22px;
+        overflow-y: auto;
+      }
+      .journal-close {
+        position: absolute;
+        top: 10px;
+        right: 16px;
+      }
+      .journal-spread {
+        display: flex;
+        gap: 28px;
+      }
+      .journal-col {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .journal-col.narrow {
+        flex: 0 0 170px;
+        border-right: 1px solid var(--ink-rule);
+        padding-right: 12px;
+      }
+      .journal-skill {
+        font: inherit;
+        text-align: left;
+        background: none;
+        border: none;
+        color: inherit;
+        padding: 3px 6px;
+        cursor: pointer;
+      }
+      .journal-skill.chosen {
+        background: var(--ink-wash-strong);
+        border-left: 4px solid var(--ink);
+        font-weight: bold;
+      }
+      .journal-title {
+        font: 22px var(--serif-sc);
+        color: var(--ink);
+      }
+      .journal-heading {
+        font: 17px var(--serif-sc);
+        color: var(--ink);
+        margin-top: 10px;
+        border-bottom: 1px solid var(--ink-rule);
+      }
+      .journal-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 6px 14px;
+      }
+      .journal-grid.wide {
+        grid-template-columns: 1fr;
+      }
+      .journal-grid.icons {
+        grid-template-columns: repeat(auto-fill, 40px);
+        gap: 4px;
+      }
+      .journal-entry {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .journal-entry canvas,
+      .journal-icon canvas {
+        width: 34px;
+        height: 34px;
+        flex: none;
+      }
+      .journal-entry.focus,
+      .journal-icon.focus {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
+      }
+      .journal-entry-name {
+        font-weight: bold;
+      }
+      .journal-entry-line {
+        font-size: 13px;
+        opacity: 0.85;
+      }
+      .journal-entry.unknown .journal-entry-name,
+      .journal-entry.unknown .journal-entry-line {
+        opacity: 0.55;
+        font-style: italic;
+      }
+      .journal-blot {
+        width: 34px;
+        height: 34px;
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--ink-wash-strong);
+        font: 18px var(--serif-sc);
+      }
+      canvas.silhouette {
+        filter: brightness(0) opacity(0.35);
+      }
+      .journal-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--ink-wash);
+        border: 1px solid var(--ink-rule);
+      }
+      /* Session settings in the Stats tab (Tier A). */
+      /* Session settings, right of the stat tiles: a label, then a row of
+         ink buttons; the chosen one is filled, so it reads at a glance on
+         the parchment. */
+      .dock-settings {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 4px;
+        min-width: 0;
+      }
+      .dock-setting {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .dock-setting-name {
+        flex: 1 1 auto;
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+      .dock-choices {
+        display: flex;
+        flex: none;
+      }
+      .dock-choice {
+        font: inherit;
+        font-size: 11.5px;
+        line-height: 1.2;
+        color: var(--ink);
+        background: #e3d5b4;
+        border: 1px solid var(--ink-rule);
+        border-left-width: 0;
+        padding: 2px 7px;
+        cursor: pointer;
+        font-variant-numeric: tabular-nums;
+      }
+      .dock-choice:first-child {
+        border-left-width: 1px;
+        border-radius: 3px 0 0 3px;
+      }
+      .dock-choice:last-child {
+        border-radius: 0 3px 3px 0;
+      }
+      .dock-choice:hover {
+        background: #ebdfc2;
+      }
+      .dock-choice.on {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: #f3e9cf;
+      }
+      .dock-journal {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 2px;
+        padding: 3px 12px;
+        font: 14px var(--serif-sc);
+        letter-spacing: 0.03em;
+        color: var(--ink);
+        background: #e3d5b4;
+        border: 1px solid var(--ink-rule);
+        border-radius: 3px;
+        box-shadow: 1px 1px 2px rgba(40, 24, 10, 0.2);
+        cursor: pointer;
+      }
+      .dock-journal:hover {
+        background: #ebdfc2;
+      }
+      .dock-journal-key {
+        font: 10px/1 Quantico, system-ui, sans-serif;
+        padding: 2px 4px 1px;
+        border: 1px solid var(--ink-rule);
+        border-radius: 2px;
+        color: var(--ink-soft);
+      }
+      /* The summary on coming back to the tab. */
+      .away-card {
+        position: fixed;
+        left: 50%;
+        top: 30%;
+        transform: translate(-50%, -50%);
+        z-index: 50;
+        min-width: 280px;
+        max-width: min(420px, calc(100vw - 32px));
+        padding: 14px 18px;
+        background: rgba(24, 28, 49, 0.96);
+        border: 1px solid #e2b25c;
+        color: #f3ebdd;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+      }
+      .away-title {
+        color: #e2b25c;
+        font-size: 17px;
+        margin-bottom: 4px;
+      }
+      .away-line.xp {
+        color: #cfe8b0;
+      }
+      .away-card .station-button {
+        align-self: flex-end;
+        margin-top: 8px;
+      }
+      .chat-link {
+        margin-left: 6px;
+        color: #e2b25c;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+      @media (max-width: 640px) {
+        .journal-book {
+          width: 100vw;
+          height: 100vh;
+          flex-direction: column;
+        }
+        .journal-tabs {
+          flex-direction: row;
+          overflow-x: auto;
+          padding: 40px 8px 0;
+        }
+        .journal-spread {
+          flex-direction: column;
+        }
+        .journal-col.narrow {
+          flex: none;
+          border-right: none;
+        }
+      }
+      /* Use: an item is picked and waits for what it goes on. */
+      body.using-item canvas,
+      body.using-item .dock-slot.filled {
+        cursor: crosshair;
+      }
+      .item-tip {
+        position: fixed;
+        width: auto;
+        min-width: 140px;
+        max-width: 220px;
+        z-index: 40;
+      }
+      .item-tip.hidden {
+        display: none;
+      }
+      .item-tip-quality {
+        color: #cfc3a8;
+        margin: 1px 0 3px;
+      }
+      .item-tip-quality.perfect {
+        color: #ffd45c;
+        text-shadow: 0 0 6px rgba(255, 212, 92, 0.6);
+      }
+      .item-tip-enchant {
+        color: #b9a2ff;
+      }
+      .ability-tip-gate {
+        color: #fff;
+        margin: 1px 0 3px;
+      }
+      .ability-tip-text {
+        opacity: 0.85;
+      }
+      .ability-tip-hint {
+        color: #e2b25c;
+        opacity: 0.75;
+        margin-top: 4px;
+      }
+      body.skin-woven .ability-tip {
+        background: rgba(24, 28, 49, 0.94);
+        border: 1px solid #0a0c16;
+        border-radius: 0;
+        box-shadow: inset 0 0 0 1px rgba(226, 178, 92, 0.4);
+        color: var(--ink);
+      }
+      body.skin-woven .ability-tip-name,
+      body.skin-woven .ability-tip-hint {
+        color: var(--stitch);
+      }
+      /* Woven bubbles: the dock's cloth inside the bubble's own border
+         (scripts/genUi.ts, bubble). Border, hover and armed glow unchanged. */
+      body.skin-woven .ability-slot,
+      body.skin-woven .ability-opt {
+        background: url('/loomfall/ui/woven-bubble.png') 0 0 / 100% 100% padding-box;
+        image-rendering: pixelated;
+      }
+      body.skin-woven .ability-sweep {
+        border-radius: 50%;
+        background: conic-gradient(rgba(10, 12, 22, 0.72) calc(var(--cd) * 360deg), transparent 0);
+      }
+      .ability-tip[hidden] {
+        display: none;
+      }
+      .dock-spell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 4px;
+      }
+      .dock-spell .dock-slot {
+        width: 40px;
+        flex: none;
+      }
+      .dock-spell b {
+        display: block;
+        font: 15px var(--serif-sc);
+        color: var(--red-ink);
+      }
+      /* The Pets tab: one row a kind; a locked one is faded, the one out is marked. */
+      .dock-pet.locked {
+        opacity: 0.55;
+      }
+      .dock-pet > div:nth-child(2) {
+        flex: 1;
+        font-size: 13px;
+      }
+      .dock-pet .dock-choice {
+        flex: none;
+        margin-left: auto;
+      }
+      .dock-ticker {
+        /* Top of the screen, off the dock: it used to sit above the dock and
+           push the ability bar up, so a click aimed at an ability could land
+           on it and open the chat. A child of the page, not the dock, so a
+           filter on the dock cannot become its containing block. */
+        position: fixed;
+        left: 50%;
+        top: 4vh;
+        z-index: 20;
+        max-width: min(100vw - 24px, 640px);
+        box-sizing: border-box;
+        padding: 4px 10px;
+        background: rgba(28, 20, 15, 0.88);
+        border: 1px solid #5e4731;
+        border-radius: 6px;
+        color: #d8b56a;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        opacity: 0;
+        transform: translate(-50%, -4px);
+        pointer-events: none;
+        transition: opacity 0.25s, transform 0.25s;
+      }
+      .dock-ticker.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+        pointer-events: auto;
+      }
+      .dock-grid {
+        display: grid;
+        grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+        gap: var(--gap);
+      }
+      .dock-slot {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(59, 43, 29, 0.06);
+        border: 1px solid var(--ink-rule);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .dock-slot {
+        position: relative;
+      }
+      /* A stack's count, top left, as in OSRS. */
+      .dock-qty {
+        position: absolute;
+        top: 1px;
+        left: 3px;
+        font-size: 12px;
+        line-height: 1;
+        color: var(--ink);
+        text-shadow: 0 0 2px #efe3c4, 0 0 2px #efe3c4;
+        pointer-events: none;
+      }
+      .dock-slot canvas {
+        image-rendering: pixelated;
+        width: 78%;
+        height: 78%;
+      }
+      .dock-slot.clickable {
+        cursor: pointer;
+      }
+      .dock-slot.clickable:hover {
+        border-color: var(--ink);
+        background: rgba(59, 43, 29, 0.12);
+      }
+      .dock-grid.spells .dock-slot {
+        opacity: 0.35;
+      }
+      .dock-worn {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 8px;
+        padding: 8px 4px 0;
+      }
+      .dock-worn-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        text-align: center;
+      }
+      .dock-ghost {
+        font-size: 11px;
+        font-style: italic;
+        color: var(--ink-soft);
+      }
+      .dock-skills {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: var(--gap);
+      }
+      .dock-skill {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 6px;
+        background: rgba(59, 43, 29, 0.06);
+        border: 1px solid var(--ink-rule);
+        border-radius: 2px;
+        color: var(--ink-soft);
+        overflow: hidden;
+      }
+      .dock-skill svg {
+        flex: 0 0 auto;
+        display: block;
+      }
+      .dock-skill-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.25;
+      }
+      .dock-skill-name {
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dock-skill .dock-level {
+        font-size: 15px;
+      }
+      /* Progress through the current level, a thin gold line at the foot. */
+      .dock-skill {
+        position: relative;
+      }
+      .dock-skill::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 2px;
+        width: var(--progress, 0%);
+        background: var(--red-ink);
+        opacity: 0.7;
+      }
+      /* A skill that just levelled glows once. */
+      .dock-skill.levelled {
+        animation: skill-levelled 1.5s ease-out;
+      }
+      @keyframes skill-levelled {
+        0% { box-shadow: 0 0 0 0 rgba(200, 150, 40, 0); border-color: var(--ink-rule); }
+        15% { box-shadow: 0 0 10px 2px rgba(200, 150, 40, 0.75); border-color: #a8812f; }
+        100% { box-shadow: 0 0 0 0 rgba(200, 150, 40, 0); border-color: var(--ink-rule); }
+      }
+      /* The Stats tab: eight tiles in the skills' style on the left, the
+         session settings and the journal on the right, all in the body's
+         fixed height, so nothing scrolls. */
+      .dock-stats-pane {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        height: 100%;
+      }
+      .dock-stats-main {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 4px;
+        min-width: 0;
+      }
+      .dock-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-auto-rows: minmax(0, 1fr);
+        gap: var(--gap);
+      }
+      .dock-stat {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1px;
+        padding: 3px 7px;
+        background: rgba(59, 43, 29, 0.06);
+        border: 1px solid var(--ink-rule);
+        border-radius: 2px;
+        color: var(--ink-soft);
+        min-width: 0;
+        overflow: hidden;
+      }
+      .dock-stat-name {
+        font-size: 11px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dock-stat-line {
+        display: flex;
+        align-items: baseline;
+        gap: 5px;
+        min-width: 0;
+      }
+      .dock-stat .dock-level {
+        font-size: 15px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dock-stat-sub {
+        font-size: 10.5px;
+        white-space: nowrap;
+      }
+      .dock-brews {
+        font-size: 12px;
+        font-style: italic;
+        color: var(--ink-soft);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dock-brews-head {
+        font-style: normal;
+        font-variant: small-caps;
+        color: var(--ink);
+        margin-right: 6px;
+      }
+      /* Numbers in Quantico: IM Fell's old-style 1 reads as a capital I. */
+      .dock-level,
+      .dock-qty {
+        font-family: Quantico, system-ui, sans-serif;
+        font-variant-numeric: tabular-nums;
+      }
+      .dock-level {
+        color: var(--ink);
+      }
+      .dock-note {
+        margin-top: 10px;
+        text-align: center;
+        font-size: 13px;
+        font-style: italic;
+        color: var(--ink-soft);
+      }
+
+      /* The chat pane: game information and chat in one log, input under it,
+         written on the story card's parchment in the same ink. */
+      .chat-box {
+        --ink: #3b2b1d;
+        --ink-soft: #6a5438;
+        --red-ink: #a0302a;
+        --serif: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+        --serif-sc: 'IM Fell English SC', 'IM Fell English', Georgia, serif;
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        /* Inside the card's inner rule (15.5px in). */
+        padding: 18px 20px 17px;
+        box-sizing: border-box;
+        isolation: isolate;
+        font-family: var(--serif);
+        color: var(--ink);
+      }
+      .chat-log {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 0 6px 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(59, 43, 29, 0.4) transparent;
+        user-select: text;
+      }
+      .chat-line {
+        font-size: 14px;
+        line-height: 1.3;
+        color: var(--ink);
+        overflow-wrap: anywhere;
+      }
+      .chat-line.info {
+        font-style: italic;
+        color: var(--ink-soft);
+      }
+      .chat-line.title {
+        font: 19px/1.25 var(--serif-sc);
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: var(--ink);
+        margin-bottom: 2px;
+      }
+      .chat-name {
+        font-family: var(--serif-sc);
+        color: var(--red-ink);
+      }
+      /* The writing line: a ruled stroke that thins out at both ends, as a
+         pen lifting off the page, rather than a hard border. */
+      .chat-input {
+        --rule: rgba(59, 43, 29, 0.45);
+        font: 14px var(--serif);
+        color: var(--ink);
+        background: linear-gradient(90deg, transparent, var(--rule) 12%, var(--rule) 88%, transparent) top / 100% 1px no-repeat;
+        border: none;
+        margin: 0 6px;
+        padding: 5px 0 0;
+        outline: none;
+        caret-color: transparent;
+      }
+      .chat-input::placeholder {
+        font-style: italic;
+        color: var(--ink-soft);
+        opacity: 0.75;
+      }
+      .chat-input:focus {
+        --rule: rgba(59, 43, 29, 0.7);
+      }
+      /* The pen is up: the prompt steps aside. */
+      .chat-input:focus::placeholder {
+        color: transparent;
+      }
+
+      /* The right-click menu (OSRS's Choose Option) and the hover tooltip
+         (RuneLite's action tip), cut from the same leather as the HUD.
+         Living targets in gold, scenery in a cooler green-blue — matching
+         the red and blue hover outlines' meaning. Loot sits between them in
+         amber, so a bone on the floor never reads as the tree behind it. */
+      .context-menu-catch {
+        position: fixed;
+        z-index: 20;
+      }
+      .context-menu {
+        min-width: 130px;
+        background: rgba(28, 20, 15, 0.96);
+        border: 2px solid #5e4731;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 1px rgba(240, 210, 160, 0.14), 0 3px 10px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+        user-select: none;
+      }
+      .context-menu-header {
+        padding: 4px 10px 3px;
+        background: #5e4731;
+        color: #f6e7c6;
+        font-size: 11px;
+        letter-spacing: 0.03em;
+      }
+      .context-menu-row {
+        display: block;
+        width: 100%;
+        padding: 4px 10px;
+        text-align: left;
+        font: inherit;
+        color: #efe2c8;
+        background: none;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .context-menu-row:hover {
+        background: rgba(94, 71, 49, 0.6);
+      }
+      /* One colour per action, shared with the hover outline: ui/actionTints.ts. */
+      .context-menu-target.attack,
+      .mouse-tooltip-target.attack {
+        color: var(--tint-attack);
+      }
+      .context-menu-target.talk,
+      .mouse-tooltip-target.talk {
+        color: var(--tint-talk);
+      }
+      .context-menu-target.gather,
+      .mouse-tooltip-target.gather {
+        color: var(--tint-gather);
+      }
+      .context-menu-target.item,
+      .mouse-tooltip-target.item {
+        color: var(--tint-item);
+      }
+      .context-menu-target.use,
+      .mouse-tooltip-target.use {
+        color: var(--tint-use);
+      }
+      .mouse-tooltip {
+        position: fixed;
+        z-index: 15;
+        padding: 3px 8px;
+        background: rgba(28, 20, 15, 0.9);
+        border: 1px solid #5e4731;
+        border-radius: 4px;
+        color: #efe2c8;
+        font-size: 11px;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      /* Quantico across the interface (ui.font = quantico), the overhead
+         chat's face. Forced over every element's own font, inline styles
+         included, except the creator, the veil, the story's card and
+         log and the dock's parchment panes, which keep their parchment serif, and the combat overlay. */
+      body.font-quantico,
+      body.font-quantico *:not(#combatOverlay, #combatOverlay *, .creator, .creator *, #veil, #veil *, .story-card, .story-card *, .story-log, .story-log *, .dock-body, .dock-body *) {
+        font-family: Quantico, system-ui, sans-serif !important;
+        /* Quantico has only 400 and 700, and the panels ask for 600-900, all
+           of which land on 700. Regular throughout reads lighter. */
+        font-weight: 400 !important;
+      }
+
+      /* The old monospace, one dev switch away (ui.font = mono). */
+      body.font-mono {
+        font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      body:not(.font-mono) .dock-meta,
+      body:not(.font-mono) .context-menu-header {
+        font-family: Rubik, system-ui, sans-serif;
+        font-weight: 500;
+      }
+
+      /* Stitched cloth (ui.skin = cloth): the interface as woven panels.
+         Deep indigo cloth, a gold running stitch inset from the edge, soft
+         corners — Loomfall's thread, instead of OSRS's leather and stone.
+         Pure CSS over the same markup, so the switch costs nothing at run
+         time and the leather stays one click away. */
+      body.skin-cloth {
+        --cloth: rgba(30, 35, 54, 0.94);
+        --cloth-deep: rgba(19, 22, 36, 0.9);
+        --cloth-lit: #2d3452;
+        --stitch: #e2b25c;
+        --stitch-dim: rgba(226, 178, 92, 0.45);
+        --ink: #f3ebdd;
+        --ink-dim: #b9b2a4;
+      }
+      body.skin-cloth .dock,
+      body.skin-cloth .context-menu,
+      body.skin-cloth #hud {
+        background: var(--cloth);
+        border: none;
+        border-radius: 12px;
+        outline: 1.5px dashed var(--stitch-dim);
+        outline-offset: -6px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 0 0 2px rgba(10, 12, 20, 0.85),
+          0 6px 18px rgba(0, 0, 0, 0.4);
+        color: var(--ink);
+      }
+      body.skin-cloth .dock-tabs {
+        border-bottom: 1px solid rgba(226, 178, 92, 0.25);
+      }
+      body.skin-cloth .dock-tab:first-child {
+        border-top-left-radius: 12px;
+      }
+      body.skin-cloth .dock-tab {
+        background: transparent;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--ink-dim);
+      }
+      body.skin-cloth .dock-tab:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      body.skin-cloth .dock-tab.active {
+        background: var(--cloth-lit);
+        box-shadow: inset 0 -3px 0 var(--stitch);
+      }
+      body.skin-cloth .dock-meta {
+        color: #8e8a9c;
+      }
+      body.skin-cloth .context-menu-header {
+        background: var(--cloth-lit);
+        color: var(--stitch);
+      }
+      body.skin-cloth .context-menu-row {
+        color: var(--ink);
+      }
+      body.skin-cloth .context-menu-row:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      body.skin-cloth .dock-ticker {
+        background: var(--cloth);
+        border: 1px solid var(--stitch-dim);
+        border-radius: 8px;
+        color: var(--stitch);
+      }
+      body.skin-cloth .mouse-tooltip {
+        background: var(--cloth);
+        border: 1px solid var(--stitch-dim);
+        border-radius: 8px;
+        color: var(--ink);
+      }
+
+      /* Woven cloth (ui.skin = woven): painted sprites from scripts/genUi.ts,
+         drawn at 1x and shown at 2x, pixel for pixel. Frames are stretched
+         border-images with a clear centre; the weave is a background tile
+         laid from the padding box, so it has no seams. */
+      body.skin-woven {
+        --ink: #f3ebdd;
+        --ink-dim: #b9b2a4;
+        --ink-faint: #8e8aa4;
+        --stitch: #e2b25c;
+      }
+      body.skin-woven .dock,
+      body.skin-woven .context-menu,
+      body.skin-woven #hud,
+      body.skin-woven .dock-ticker {
+        background: url('/loomfall/ui/woven-cloth.png') 0 0 / 16px 16px repeat padding-box;
+        border-radius: 0;
+        box-shadow: none;
+        image-rendering: pixelated;
+        color: var(--ink);
+      }
+      body.skin-woven .dock {
+        --dock-w: 656px;
+        border: 10px solid transparent;
+        border-image: url('/loomfall/ui/woven-frame.png') 12 / 24px / 0 stretch;
+        padding: 8px;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+      }
+      body.skin-woven .context-menu,
+      body.skin-woven #hud,
+      body.skin-woven .dock-ticker {
+        border: 6px solid transparent;
+        border-image: url('/loomfall/ui/woven-plate.png') 6 / 12px / 0 stretch;
+        filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4));
+      }
+      body.skin-woven .context-menu {
+        padding: 4px;
+      }
+      body.skin-woven .dock-tabs,
+      body.skin-woven .dock.collapsed .dock-tabs {
+        gap: 3px;
+        border-bottom: none;
+      }
+      body.skin-woven .dock-tab,
+      body.skin-woven .dock-fold {
+        color: var(--ink-dim);
+        background: none;
+        border: 4px solid transparent;
+        border-radius: 0;
+        border-image: url('/loomfall/ui/woven-tab.png') 4 fill / 8px stretch;
+        image-rendering: pixelated;
+        padding: 2px 7px;
+        box-shadow: none;
+      }
+      body.skin-woven .dock-tab:hover,
+      body.skin-woven .dock-fold:hover {
+        color: var(--ink);
+        background: none;
+        filter: brightness(1.18);
+      }
+      body.skin-woven .dock-tab.active {
+        color: var(--ink);
+        background: none;
+        box-shadow: none;
+        border-image-source: url('/loomfall/ui/woven-tab-active.png');
+      }
+      body.skin-woven .dock-body {
+        margin-top: 6px;
+      }
+      body.skin-woven .dock.collapsed .dock-body {
+        margin-top: 0;
+      }
+      body.skin-woven .dock-meta {
+        color: var(--ink-faint);
+      }
+      body.skin-woven .dock-ticker {
+        padding: 6px 12px;
+        color: var(--stitch);
+      }
+      body.skin-woven .context-menu-header {
+        background: none;
+        border-bottom: 1px solid rgba(226, 178, 92, 0.35);
+        color: var(--stitch);
+      }
+      body.skin-woven .context-menu-row {
+        color: var(--ink);
+      }
+      body.skin-woven .context-menu-row:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      body.skin-woven .mouse-tooltip {
+        background: rgba(24, 28, 49, 0.94);
+        border: 1px solid #0a0c16;
+        border-radius: 0;
+        box-shadow: inset 0 0 0 1px rgba(226, 178, 92, 0.4);
+        color: var(--ink);
+      }
+      /* The minimap's ring (ui/minimap.ts) sits over the map's own border.
+         Only the round map has one; the patch keeps its own look. */
+      .minimap-ring {
+        display: none;
+        position: fixed;
+        pointer-events: none;
+        background-size: 100% 100%;
+        filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.45));
+      }
+      /* Status orbs under the minimap (ui/orbs.ts places them).
+         Carved stone to match the map's own ring. */
+      .minimap-orb {
+        position: fixed;
+        z-index: 3;
+        box-sizing: border-box;
+        padding: 0;
+        border-radius: 50%;
+        border: 3px solid #3a3028;
+        background: radial-gradient(circle at 40% 35%, #2e2620, #15110d);
+        box-shadow: inset 0 0 0 1px rgba(222, 196, 150, 0.35), 0 2px 6px rgba(0, 0, 0, 0.5);
+        overflow: visible;
+        pointer-events: auto;
+        cursor: pointer;
+      }
+      button.minimap-orb:hover {
+        border-color: #5a4a38;
+      }
+      button.minimap-orb:active .minimap-orb-icon {
+        transform: scale(0.9);
+      }
+      div.minimap-orb {
+        cursor: default;
+      }
+      /* Full size and round; the level is a clip from the top (orbs.ts). */
+      .minimap-orb-fill {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        clip-path: inset(100% 0 0 0);
+        transition: clip-path 0.25s ease-out;
+        pointer-events: none;
+      }
+      .minimap-orb.hp .minimap-orb-fill {
+        background: radial-gradient(circle at 38% 40%, #e0463c, #a8181e 55%, #5e0a0e);
+      }
+      .minimap-orb-icon {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+      }
+      .minimap-orb-plate {
+        position: absolute;
+        right: calc(100% + 1px);
+        top: 50%;
+        transform: translateY(-50%);
+        min-width: 22px;
+        padding: 1px 6px 1px 4px;
+        border-radius: 4px 0 0 4px;
+        background: #1c1612;
+        border: 1px solid #3a3028;
+        font: bold 12px/14px ui-monospace, Consolas, monospace;
+        text-align: center;
+        text-shadow: 1px 1px 0 #000;
+        pointer-events: none;
+      }
+      .minimap-orb.on {
+        border-color: #c9a45c;
+        box-shadow: inset 0 0 0 1px rgba(255, 220, 150, 0.6), 0 0 10px rgba(226, 178, 92, 0.6);
+      }
+      /* The dev object placer (ui/placer.ts): under the minimap, on the right,
+         so the dev panel on the left can stay open beside it. */
+      .placer-panel {
+        position: fixed;
+        z-index: 29;
+        top: 250px;
+        right: max(10px, env(safe-area-inset-right));
+        width: 272px;
+        max-height: calc(100dvh - 330px);
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-bottom: 8px;
+        background: rgba(16, 18, 24, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        color: #dfe3ea;
+        font: 12px/1.35 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        user-select: none;
+      }
+      .placer-panel.hidden {
+        display: none;
+      }
+      .placer-search,
+      .placer-out {
+        margin: 0 10px;
+        padding: 5px 7px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 6px;
+        color: inherit;
+        font: inherit;
+      }
+      .placer-out {
+        resize: vertical;
+        font: 11px/1.35 ui-monospace, Consolas, monospace;
+        white-space: pre;
+        user-select: text;
+      }
+      .placer-grid {
+        flex: 1;
+        min-height: 90px;
+        overflow-y: auto;
+        margin: 0 10px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+      }
+      .placer-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 4px 2px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid transparent;
+        border-radius: 6px;
+        color: inherit;
+        font: 10.5px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        text-align: center;
+        cursor: pointer;
+      }
+      .placer-card[hidden] {
+        display: none;
+      }
+      .placer-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .placer-card.on {
+        border-color: #e2b25c;
+        background: rgba(226, 178, 92, 0.16);
+      }
+      /* Renders are four turns side by side: show the first. */
+      .placer-card img {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        object-position: left center;
+        image-rendering: pixelated;
+      }
+      .placer-status {
+        margin: 0 10px;
+        color: #aab2c0;
+      }
+      .placer-panel .dev-presets,
+      .placer-panel .dev-note {
+        margin: 0 10px;
+        padding: 0;
+      }
+      @media (max-width: 600px) {
+        .placer-panel {
+          top: auto;
+          bottom: 90px;
+          left: 8px;
+          right: 8px;
+          width: auto;
+          max-height: 50dvh;
+        }
+      }
+      body.skin-woven .minimap-orb {
+        border-color: #0a0c16;
+        box-shadow: inset 0 0 0 1px rgba(226, 178, 92, 0.4), 0 2px 6px rgba(0, 0, 0, 0.5);
+      }
+      body.skin-woven .minimap-orb-plate {
+        background: #181c31;
+        border-color: #0a0c16;
+      }
+      body.skin-woven .minimap-ring[data-shape='round'] {
+        display: block;
+      }
+      body.skin-woven .minimap[data-shape='round'] {
+        border-color: #0a0c16 !important;
+        box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5) !important;
+      }
+      body.skin-woven .minimap-north {
+        z-index: 1;
+        top: 4px !important;
+        width: 22px !important;
+        height: 22px !important;
+        margin-right: -2px;
+        background: url('/loomfall/ui/woven-north.png') 0 0 / 100% 100% !important;
+        border: none !important;
+        border-radius: 0 !important;
+        color: transparent !important;
+        image-rendering: pixelated;
+      }
+      /* Tab icons in the cloth's own muted palette (panelIcons.ts roles). */
+      body.skin-woven .dock-tab {
+        --icon-light: #d6cdb9;
+        --icon-mid: #8d91ab;
+        --icon-dark: #4a5074;
+        --icon-accent: #e2b25c;
+      }
+      body.skin-woven .dock-tab svg {
+        opacity: 0.78;
+        filter: none;
+      }
+      body.skin-woven .dock-tab:hover svg,
+      body.skin-woven .dock-tab.active svg {
+        opacity: 1;
+      }
+
+      /* Phone: the dock spans the width, tabs go icon-only, and the pack
+         wraps to seven across in small slots, four rows under a short body. The camera lifts
+         the player into the space above it (main.ts). */
+      @media (max-width: 600px) {
+        .dock {
+          --cols: 7;
+          --body-h: 200px;
+          left: max(8px, env(safe-area-inset-left));
+          right: max(8px, env(safe-area-inset-right));
+          bottom: max(8px, env(safe-area-inset-bottom));
+          width: auto;
+          transform: none;
+        }
+        /* Folded, it hugs its icons like the wide screen's strip; only the
+           open dock spans the width. */
+        .dock.collapsed {
+          left: 50%;
+          right: auto;
+          width: max-content;
+          transform: translateX(-50%);
+        }
+        .dock-tab {
+          flex: 1;
+          justify-content: center;
+          padding: 10px 0 9px;
+        }
+        .dock.collapsed .dock-tab {
+          flex: 0 0 40px;
+        }
+        .dock-tab-label,
+        .dock-meta {
+          display: none;
+        }
+        .dock-grid {
+          grid-template-columns: repeat(var(--cols), minmax(0, 38px));
+          justify-content: center;
+        }
+        /* Still clear of the card's inner rule (15.5px in). */
+        .dock-content {
+          margin: 18px 20px 17px;
+        }
+        .dock-worn {
+          grid-template-columns: repeat(4, minmax(0, 60px));
+          justify-content: center;
+          row-gap: 4px;
+          padding-top: 2px;
+        }
+        .dock-skills {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        /* Stacked on a phone: tiles, then settings. Taller than the body,
+           so this one tab scrolls. */
+        .dock-stats-pane {
+          grid-template-columns: minmax(0, 1fr);
+          height: auto;
+          gap: 6px;
+        }
+        .dock-stats-main {
+          grid-template-rows: auto auto;
+        }
+        .dock-stat {
+          padding: 3px 6px;
+        }
+        .dock-stat .dock-level {
+          font-size: 13px;
+        }
+        body.skin-woven .dock-tab {
+          padding: 6px 0;
+        }
+        .dock-fold {
+          flex: 0 0 36px;
+        }
+      }
+
+      /* The world map (ui/worldMap.ts): the whole island on one sewn sheet. */
+      .world-map {
+        position: fixed;
+        inset: 0;
+        z-index: 25;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(8, 10, 18, 0.62);
+        backdrop-filter: blur(2px);
+      }
+      .world-map.hidden {
+        display: none;
+      }
+      .world-map-card {
+        position: relative;
+        padding: 14px 14px 10px;
+        background: rgba(30, 35, 54, 0.97);
+        border-radius: 16px;
+        outline: 1.5px dashed rgba(226, 178, 92, 0.6);
+        outline-offset: -7px;
+        box-shadow: 0 0 0 2px #0d0f1a, 0 14px 40px rgba(0, 0, 0, 0.55);
+        color: #f3ebdd;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .world-map-title {
+        font: 700 16px/1 Rubik, system-ui, sans-serif;
+        letter-spacing: 0.08em;
+        color: #e2b25c;
+        text-transform: uppercase;
+      }
+      .world-map-close {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: none;
+        color: #b9b2a4;
+        font-size: 22px;
+        cursor: pointer;
+      }
+      .world-map-canvas {
+        height: min(78dvh, 720px);
+        aspect-ratio: 360 / 520;
+        max-width: calc(100vw - 48px);
+        border-radius: 3px;
+        background: #efe2c2;
+        box-shadow: 0 0 0 1px #2a1d12, 0 6px 18px rgba(0, 0, 0, 0.45);
+      }
+      .world-map-note {
+        font-size: 11px;
+        color: #9a95a6;
+      }
+
+      /* Conversations and the quest log (ui/dialogue.ts). The card is the
+         creator's parchment, painted on its canvas; this is type and layout.
+         It covers the dock's Chat tab whole, log and input, while it is up. */
+      .story-card {
+        --ink: #3b2b1d;
+        --ink-soft: #6a5438;
+        --red-ink: #a0302a;
+        --serif: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+        --serif-sc: 'IM Fell English SC', 'IM Fell English', Georgia, serif;
+        position: absolute;
+        inset: 0;
+        padding: 16px 24px 14px;
+        box-sizing: border-box;
+        z-index: 2;
+        isolation: isolate;
+        cursor: pointer;
+        user-select: none;
+        font-family: var(--serif);
+        color: var(--ink);
+        display: flex;
+        flex-direction: column;
+        justify-content: safe center;
+        text-align: center;
+      }
+      .story-card[hidden] {
+        display: none;
+      }
+      .story-card.shown {
+        animation: story-in 0.25s ease-out both;
+      }
+      @keyframes story-in {
+        from {
+          opacity: 0;
+        }
+      }
+      .card-paper {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        filter: drop-shadow(0 2px 2px rgba(40, 24, 10, 0.35)) drop-shadow(0 10px 20px rgba(40, 24, 10, 0.35));
+      }
+      .story-name {
+        font: 17px/1.1 var(--serif-sc);
+        letter-spacing: 0.04em;
+        color: var(--red-ink);
+        margin: 0 0 4px;
+        min-height: 1px;
+      }
+      .story-card.player .story-name {
+        color: var(--ink-soft);
+      }
+      /* Name and line sit together in the middle of the card; a line too
+         long for it starts at the top and scrolls. */
+      .story-text {
+        flex: 0 1 auto;
+        min-height: 0;
+        overflow: hidden auto;
+        scrollbar-width: none;
+        font-size: 16px;
+        line-height: 1.34;
+        padding: 0 4px;
+      }
+      .story-text span {
+        opacity: 0;
+        transition: opacity 0.2s ease-out;
+      }
+      .story-text span.on {
+        opacity: 1;
+      }
+      .story-card.narrated .story-text {
+        /* Narration has no name above it, so it sits in the middle of the card; long lines still start at the top and scroll. */
+        align-content: safe center;
+        font-style: italic;
+        color: var(--ink-soft);
+      }
+      .story-hint {
+        position: absolute;
+        right: 26px;
+        bottom: 12px;
+        font-style: italic;
+        font-size: 13px;
+        color: var(--ink-soft);
+        opacity: 0.75;
+      }
+      @media (max-width: 600px) {
+        .story-card {
+          padding: 14px 18px 12px;
+        }
+        .story-text {
+          font-size: 15px;
+        }
+        /* A spoken line is two or three lines of type, not a pack's four
+           rows: the dock shrinks to it and gives the world back. */
+        .dock:has(.chat-box:not([hidden]) > .story-card:not([hidden])) {
+          --body-h: 130px;
+        }
+      }
+      .story-log {
+        position: fixed;
+        top: max(10px, env(safe-area-inset-top));
+        left: max(12px, env(safe-area-inset-left));
+        max-width: min(300px, calc(100vw - 200px));
+        padding: 9px 13px 10px;
+        border-radius: 8px;
+        background: rgba(30, 35, 54, 0.82);
+        box-shadow: 0 0 0 1.5px rgba(226, 178, 92, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+        color: #f3ebdd;
+        z-index: 12;
+        pointer-events: none;
+        transition: box-shadow 0.6s ease;
+      }
+      .story-log-title {
+        font: 15px/1.2 'IM Fell English SC', Georgia, serif;
+        letter-spacing: 0.03em;
+        color: #e2b25c;
+        margin-bottom: 3px;
+      }
+      .story-log-line {
+        font: 14px/1.35 'IM Fell English', Georgia, serif;
+      }
+      .story-log.glow {
+        animation: story-glow 2.4s ease-out;
+      }
+      @keyframes story-glow {
+        0% {
+          box-shadow: 0 0 0 2px #f2d36b, 0 0 22px rgba(242, 211, 107, 0.85);
+        }
+        100% {
+          box-shadow: 0 0 0 1.5px rgba(226, 178, 92, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+      }
+      body.ui-away .story-log {
+        opacity: 0;
+      }
+      /* A finished quest's log fading away (LOG_FADE_MS in dialogue.ts). */
+      .story-log.leaving {
+        opacity: 0;
+        transition: opacity 0.6s ease;
+      }
+      /* Phone: smaller type and a narrower plate, clear of the minimap. */
+      @media (max-width: 600px) {
+        .story-log {
+          max-width: min(220px, calc(100vw - 210px));
+          padding: 6px 10px 7px;
+        }
+        .story-log-title {
+          font-size: 13px;
+          margin-bottom: 1px;
+        }
+        .story-log-line {
+          font-size: 13px;
+          line-height: 1.3;
+        }
+      }
+
+      /* Character creation (ui/creator.ts): a parchment card in the world
+         map's hand beside the character, who stands against a watercolour
+         sky painted by main.ts. The card is at the side of a wide window and
+         a bottom sheet on a phone; its sections scroll inside it when the
+         window is short, so the seal is always on screen. Paper, rules and
+         dabs are painted on canvases (ui/creatorArt.ts); this is type and
+         layout. */
+      .creator {
+        --ink: #3b2b1d;
+        --ink-soft: #6a5438;
+        --ink-faint: rgba(59, 43, 29, 0.28);
+        --red-ink: #a0302a;
+        --serif: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+        --serif-sc: 'IM Fell English SC', 'IM Fell English', Georgia, serif;
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        pointer-events: none;
+        font-family: var(--serif);
+        color: var(--ink);
+        transition: opacity 0.5s ease;
+      }
+      .creator *,
+      .creator *::before,
+      .creator *::after {
+        box-sizing: border-box;
+      }
+      .creator.leaving {
+        opacity: 0;
+      }
+      .creator-card {
+        pointer-events: auto;
+        position: absolute;
+        right: max(28px, env(safe-area-inset-right));
+        top: 50%;
+        transform: translateY(-50%);
+        width: min(420px, calc(100vw - 56px));
+        max-height: calc(100dvh - 40px);
+        display: flex;
+        flex-direction: column;
+        padding: 30px 32px 22px;
+        isolation: isolate;
+        animation: creator-card-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      }
+      .creator-paper {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        filter: drop-shadow(0 2px 2px rgba(40, 24, 10, 0.35)) drop-shadow(0 14px 26px rgba(40, 24, 10, 0.4));
+      }
+      @keyframes creator-card-in {
+        from {
+          opacity: 0;
+          transform: translate(28px, -50%) rotate(0.8deg);
+        }
+      }
+
+      /* Head: the name is written into the title. */
+      .creator-head {
+        flex: 0 0 auto;
+        text-align: center;
+        padding: 2px 6px 6px;
+      }
+      .creator-over,
+      .creator-under {
+        font-style: italic;
+        font-size: 15px;
+        color: var(--ink-soft);
+      }
+      .creator-under {
+        font-size: 14px;
+      }
+      .creator-name {
+        display: block;
+        width: 100%;
+        margin: 2px 0 0;
+        padding: 0 4px 2px;
+        border: 0;
+        border-bottom: 1px solid transparent;
+        background: none;
+        font: 36px/1.15 var(--serif-sc);
+        letter-spacing: 0.03em;
+        color: var(--ink);
+        text-align: center;
+        outline: none;
+        caret-color: transparent;
+        transition: border-color 0.2s ease;
+      }
+      .creator-name::placeholder {
+        font-family: var(--serif);
+        font-style: italic;
+        font-size: 30px;
+        letter-spacing: 0;
+        color: rgba(59, 43, 29, 0.36);
+      }
+      .creator-name:focus::placeholder {
+        color: transparent;
+      }
+      .creator-name:focus,
+      .creator-card.unnamed .creator-name {
+        border-bottom-color: var(--ink-faint);
+      }
+      .creator-card.nudge .creator-name {
+        border-bottom-color: var(--red-ink);
+      }
+      .creator-name-field {
+        position: relative;
+      }
+      .creator-card.nudge .creator-name-field {
+        animation: creator-nudge 0.45s ease;
+      }
+      /* A pen stroke leaning with the hand: thick at the top, tapering out. */
+      /* A straight ink stroke no heavier than the letters (penCaret.ts sizes
+         it to the font), thinning out at both ends, blinking gently. */
+      .pen-caret {
+        position: absolute;
+        background: linear-gradient(transparent, var(--ink) 25%, var(--ink) 75%, transparent);
+        pointer-events: none;
+        opacity: 0;
+      }
+      .pen-caret.on {
+        animation: pen-caret 1.2s 0.5s ease-in-out infinite;
+        opacity: 0.8;
+      }
+      @keyframes pen-caret {
+        50% {
+          opacity: 0.25;
+        }
+      }
+      @keyframes creator-nudge {
+        20%,
+        60% {
+          transform: translateX(-5px);
+        }
+        40%,
+        80% {
+          transform: translateX(5px);
+        }
+      }
+      .creator-flourish {
+        display: block;
+        width: 190px;
+        height: 13px;
+        margin: 6px auto 4px;
+        fill: var(--ink);
+        opacity: 0.8;
+      }
+
+      /* Ledger: sections of rows. */
+      .creator-ledger {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        margin: 6px -8px 0;
+        padding: 0 8px 4px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(106, 84, 56, 0.45) transparent;
+      }
+      .creator-section {
+        margin-top: 10px;
+        animation: creator-ink-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+        animation-delay: calc(0.18s + var(--i, 0) * 0.08s);
+      }
+      @keyframes creator-ink-in {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+      }
+      .creator-section-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 6px;
+        font: 400 14px/1 var(--serif-sc);
+        letter-spacing: 0.34em;
+        color: var(--ink-soft);
+      }
+      .creator-section-title::before,
+      .creator-section-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(to right, transparent, var(--ink-faint) 30%, var(--ink-faint) 70%, transparent);
+      }
+      /* Letter-spacing trails after the last letter; the right rule's margin
+         takes it back so the title sits centred between its rules. */
+      .creator-section-title::after {
+        margin-left: -0.34em;
+      }
+      .creator-row {
+        display: grid;
+        grid-template-columns: 84px minmax(0, 1fr);
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 3px;
+        padding: 3px 0;
+      }
+      .creator-row .creator-dabs {
+        grid-column: 1 / -1;
+      }
+      .creator-row.inline .creator-dabs {
+        grid-column: 2;
+      }
+      .creator-label {
+        font-size: 17px;
+        color: var(--ink);
+      }
+
+      /* Style: the map compass's points either side of the name. */
+      .creator-stepper {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+      .creator-step {
+        flex: 0 0 auto;
+        width: 32px;
+        height: 30px;
+        padding: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      .creator-pointer {
+        width: 24px;
+        height: 24px;
+        display: block;
+        margin: auto;
+        fill: var(--ink);
+        transition: transform 0.15s ease, fill 0.15s ease;
+      }
+      .creator-step:hover .creator-pointer {
+        transform: scale(1.15);
+        fill: var(--red-ink);
+      }
+      .creator-step:active .creator-pointer {
+        transform: scale(0.94);
+      }
+      .creator-value {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        font-style: italic;
+        font-size: 19px;
+        line-height: 1.5;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Colour: watercolour dabs, the chosen one circled in red ink. */
+      .creator-dabs {
+        display: flex;
+        justify-content: center;
+        gap: 3px;
+        min-width: 0;
+        padding: 4px 0;
+      }
+      .creator-dab {
+        position: relative;
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 40px;
+        aspect-ratio: 64 / 52;
+        padding: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+      }
+      .creator-dab canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.15s ease;
+      }
+      .creator-dab:hover canvas {
+        transform: scale(1.1) rotate(-3deg);
+      }
+      .creator-ring {
+        position: absolute;
+        left: -18%;
+        top: -22%;
+        width: 136%;
+        height: 144%;
+        overflow: visible;
+        pointer-events: none;
+        fill: none;
+        stroke: var(--red-ink);
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        opacity: 0;
+        transition: stroke-dashoffset 0.35s ease-out, opacity 0.12s linear;
+      }
+      .creator-dab.chosen .creator-ring {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+
+      /* Foot: chance, and the seal. */
+      .creator-actions {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--ink-faint);
+      }
+      .creator-chance {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 4px;
+        border: 0;
+        background: none;
+        font: italic 17px var(--serif);
+        color: var(--ink);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .creator-die {
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 1.3;
+        transition: transform 0.3s cubic-bezier(0.3, 1.6, 0.5, 1);
+      }
+      .creator-die circle {
+        fill: var(--ink);
+        stroke: none;
+      }
+      .creator-chance:hover {
+        color: var(--red-ink);
+      }
+      .creator-chance:hover .creator-die {
+        transform: rotate(-24deg);
+        stroke: var(--red-ink);
+      }
+      .creator-chance:hover .creator-die circle {
+        fill: var(--red-ink);
+      }
+      .creator-chance:active .creator-die {
+        transform: rotate(160deg) scale(0.9);
+      }
+
+      /* The seal: a banner cut like the chart's cartouche, in sealing wax,
+         with a pale hairline inside its edge. Three layers of the same shape:
+         the dark rim, the hairline, the wax. */
+      .creator-seal {
+        --notch: 16px;
+        position: relative;
+        flex: 0 1 216px;
+        min-width: 176px;
+        height: 50px;
+        padding: 0;
+        border: 0;
+        background: #4e0f0a;
+        clip-path: polygon(var(--notch) 0, calc(100% - var(--notch)) 0, 100% 50%, calc(100% - var(--notch)) 100%, var(--notch) 100%, 0 50%);
+        cursor: pointer;
+        transition: filter 0.2s ease, transform 0.1s ease;
+      }
+      .creator-seal::before,
+      .creator-seal::after {
+        content: '';
+        position: absolute;
+        clip-path: polygon(var(--notch) 0, calc(100% - var(--notch)) 0, 100% 50%, calc(100% - var(--notch)) 100%, var(--notch) 100%, 0 50%);
+      }
+      .creator-seal::before {
+        inset: 3px;
+        --notch: 14.5px;
+        background: rgba(246, 226, 190, 0.55);
+      }
+      .creator-seal::after {
+        inset: 4px;
+        --notch: 14px;
+        background:
+          radial-gradient(120% 160% at 28% 12%, rgba(255, 190, 160, 0.35), transparent 45%),
+          radial-gradient(140% 120% at 70% 110%, rgba(40, 0, 0, 0.45), transparent 60%),
+          linear-gradient(#b73a2c, #8d2219);
+      }
+      .creator-seal-text {
+        position: relative;
+        z-index: 1;
+        font: 20px/50px var(--serif-sc);
+        letter-spacing: 0.08em;
+        color: #f6e6c8;
+        text-shadow: 0 1px 0 rgba(60, 8, 4, 0.8), 0 -1px 0 rgba(255, 210, 180, 0.25);
+      }
+      .creator-seal:hover {
+        filter: brightness(1.12) saturate(1.05);
+      }
+      .creator-seal:active {
+        transform: translateY(1px);
+        filter: brightness(0.95);
+      }
+      .creator-seal[aria-disabled='true'] {
+        filter: saturate(0.35) brightness(0.92);
+        cursor: default;
+      }
+      .creator-need {
+        display: none;
+        flex: 0 0 auto;
+        margin-top: 4px;
+        text-align: right;
+        padding-right: 30px;
+        font-style: italic;
+        font-size: 13px;
+        color: var(--red-ink);
+        opacity: 0.85;
+      }
+      .creator-card.unnamed .creator-need {
+        display: block;
+      }
+      .creator button:focus-visible {
+        outline: 2px solid var(--red-ink);
+        outline-offset: 2px;
+      }
+      .creator-seal:focus-visible {
+        outline: none;
+        filter: brightness(1.15);
+      }
+
+      /* The turn hint, under the character. */
+      .creator-hint {
+        position: absolute;
+        transform: translate(-50%, 0);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-style: italic;
+        font-size: 15px;
+        color: rgba(59, 43, 29, 0.72);
+        text-shadow: 0 0 6px rgba(240, 226, 194, 0.9);
+        animation: creator-hint-in 1s 0.8s ease both;
+      }
+      @keyframes creator-hint-in {
+        from {
+          opacity: 0;
+        }
+      }
+      .creator-turn {
+        width: 150px;
+        height: 28px;
+        margin-bottom: -10px;
+        fill: none;
+        stroke: rgba(59, 43, 29, 0.6);
+        stroke-width: 1.3;
+        stroke-linecap: round;
+      }
+
+      /* Short window: the head tightens so more of the ledger shows. */
+      @media (min-width: 701px) and (max-height: 700px) {
+        .creator-card {
+          padding-top: 24px;
+        }
+        .creator-name {
+          font-size: 30px;
+        }
+        .creator-under {
+          display: none;
+        }
+      }
+
+      /* Phone: a bottom sheet. The character stands in the clear top. */
+      @keyframes creator-sheet-in {
+        from {
+          opacity: 0;
+          transform: translateY(40px);
+        }
+      }
+      @media (max-width: 700px) {
+        .creator-card {
+          left: 0;
+          right: 0;
+          top: auto;
+          bottom: 0;
+          width: auto;
+          max-height: 60dvh;
+          transform: none;
+          padding: 24px max(24px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+          animation-name: creator-sheet-in;
+        }
+        .creator-over {
+          font-size: 13px;
+        }
+        .creator-name {
+          font-size: 28px;
+        }
+        .creator-name::placeholder {
+          font-size: 24px;
+        }
+        .creator-flourish {
+          width: 150px;
+          margin: 3px auto 0;
+        }
+        .creator-under {
+          display: none;
+        }
+        .creator-row {
+          grid-template-columns: 76px minmax(0, 1fr);
+        }
+        /* Too narrow to share a line with its label. */
+        .creator-row.inline .creator-dabs {
+          grid-column: 1 / -1;
+        }
+        .creator-step {
+          width: 40px;
+          height: 36px;
+        }
+        .creator-seal {
+          min-width: 160px;
+          height: 46px;
+        }
+        .creator-seal-text {
+          font-size: 18px;
+          line-height: 46px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .creator,
+        .creator * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* The veil (ui/veil.ts): the creator's painted sky, up from the first
+         paint so no half-built scene is ever shown. The gradient is only
+         what shows before the script paints the canvas. Under the dev panel
+         and the error HUD, over everything else. */
+      .veil {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        overflow: hidden;
+        background: linear-gradient(#96b4be, #c9cfc0 55%, #e6d2a8);
+        transition-property: opacity;
+        transition-timing-function: cubic-bezier(0.45, 0, 0.2, 1);
+      }
+      .veil canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        transform-origin: 50% 35%;
+        transition-property: transform;
+        transition-timing-function: cubic-bezier(0.2, 0.6, 0.3, 1);
+      }
+      .veil.lifted {
+        opacity: 0;
+        pointer-events: none;
+      }
+      /* A boss's health across the top (ui/bossBar.ts). */
+      #bossBar {
+        position: fixed;
+        top: max(12px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(440px, calc(100vw - 48px));
+        padding: 6px 12px 8px;
+        box-sizing: border-box;
+        background: rgba(10, 9, 14, 0.78);
+        border: 2px solid #a8833a;
+        border-radius: 6px;
+        color: #efe2c2;
+        text-align: center;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 700;
+        font-size: 14px;
+        text-shadow: 0 1px 0 #000;
+        z-index: 8;
+        pointer-events: none;
+        transition: opacity 0.5s;
+      }
+      #bossBar.hidden {
+        opacity: 0;
+      }
+      #bossBar .track {
+        height: 10px;
+        margin-top: 5px;
+        background: #26191b;
+        border: 1px solid #5a3a3a;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      #bossBar .fill {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(#e8604e, #8a1f1f);
+        transition: width 0.25s;
+      }
+      /* Through a dungeon door: the dark, not the sky. */
+      .veil.dark {
+        background: #06070a;
+      }
+      .veil.dark canvas {
+        visibility: hidden;
+      }
+      /* Swells as it goes: the camera is coming down through it. */
+      .veil.lifted canvas {
+        transform: scale(1.1);
+      }
+      #hud.error {
+        z-index: 25;
+      }
+
+      /* The interface is away while the player arrives (game/arrival.ts):
+         everything the game adds to the body, minus the canvas, the veil,
+         the HUD and the dev tools. It eases back only when coming back. */
+      body.ui-away > :not(#app):not(#hud):not(script):not(.veil):not(.dev-panel) {
+        opacity: 0;
+        pointer-events: none;
+      }
+      body.ui-easing > :not(#app):not(#hud):not(script):not(.veil):not(.dev-panel) {
+        transition: opacity 0.9s ease-out !important;
+      }
+    </style>
+    <script type="module" crossorigin src="/loomfall/assets/index-CK75zosr.js"></script>
+  </head>
+  <body>
+    <div id="app"><canvas id="renderCanvas" touch-action="none"></canvas></div>
+    <div id="veil" class="veil"><canvas></canvas></div>
+    <pre id="hud">booting…</pre>
+  </body>
+</html>
