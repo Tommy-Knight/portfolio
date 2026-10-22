@@ -7,6 +7,17 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
     />
     <title>Loomfall — voxel pipeline test</title>
+    <!-- Installable as an app so phones play it fullscreen. -->
+    <link rel="manifest" href="/loomfall/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/loomfall/pwa/icon-192.png" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Loomfall" />
+    <script>
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    </script>
     <!-- Rubik for headings, numbers and hitsplats (its squared, rounded
          corners sit with the voxels); Nunito for everything read at length.
          Chosen in the 2026-09-22 art pass; the old monospace stays one dev
@@ -3085,7 +3096,7 @@
         transition: opacity 0.9s ease-out !important;
       }
     </style>
-    <script type="module" crossorigin src="/loomfall/assets/index-CK75zosr.js"></script>
+    <script type="module" crossorigin src="/loomfall/assets/index-DKpUWLo9.js"></script>
   </head>
   <body>
     <div id="app"><canvas id="renderCanvas" touch-action="none"></canvas></div>
